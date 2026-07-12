@@ -78,19 +78,20 @@ jobs:
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          set -o pipefail   # sonst maskiert tee den xcodebuild-Fehlerstatus!
           plutil -insert teamID -string "$TEAM_ID" ExportOptions.plist
-          xcodebuild -exportArchive \
-            -archivePath build/LernWeide.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath build/export \
-            -allowProvisioningUpdates \
-            -authenticationKeyID "$KEY_ID" \
-            -authenticationKeyIssuerID "$ISSUER_ID" \
-            -authenticationKeyPath ~/private_keys/AuthKey_${KEY_ID}.p8 \
-            2>&1 | tee export.log || {
-              grep -iE "error" export.log | head -20 | while IFS= read -r zeile; do echo "::error::$zeile"; done
-              exit 1
-            }
+          if ! xcodebuild -exportArchive \
+              -archivePath build/LernWeide.xcarchive \
+              -exportOptionsPlist ExportOptions.plist \
+              -exportPath build/export \
+              -allowProvisioningUpdates \
+              -authenticationKeyID "$KEY_ID" \
+              -authenticationKeyIssuerID "$ISSUER_ID" \
+              -authenticationKeyPath ~/private_keys/AuthKey_${KEY_ID}.p8 \
+              2>&1 | tee export.log; then
+            grep -iE "error|invalid|fail" export.log | head -30 | while IFS= read -r zeile; do echo "::error::$zeile"; done
+            exit 1
+          fi
 
       - name: Aufräumen (Key löschen)
         if: always()
