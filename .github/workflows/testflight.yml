@@ -51,15 +51,14 @@ jobs:
       - name: Xcode-Projekt erzeugen
         run: xcodegen generate
 
-      # DEVELOPMENT_TEAM kommt als Build-Setting-Override aus dem Secret:
-      # Automatic Signing braucht die Team-ID, sonst Exit 65 noch vor dem API-Key.
-      # CODE_SIGN_IDENTITY="Apple Distribution": schon das Archiv wird fürs
-      # App-Store-Profil signiert – Development-Profile würden mindestens ein
-      # registriertes Gerät im Team verlangen (frische Accounts haben keines).
-      - name: Archivieren (Cloud Signing)
+      # Das Archiv wird UNSIGNIERT gebaut – signiert wird erst beim Export.
+      # Grund: Beim Archivieren würde Automatic Signing ein Development-
+      # Profil erzeugen wollen, und das verlangt mindestens ein registriertes
+      # Gerät im Team ("Your team has no devices"). Der Export signiert
+      # stattdessen mit Distribution-Zertifikat + App-Store-Profil – die
+      # brauchen keine Geräte und entstehen automatisch über den API-Key.
+      - name: Archivieren (unsigniert)
         env:
-          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           set -o pipefail
@@ -70,11 +69,7 @@ jobs:
             -archivePath build/LernWeide.xcarchive \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             DEVELOPMENT_TEAM="$TEAM_ID" \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            -allowProvisioningUpdates \
-            -authenticationKeyID "$KEY_ID" \
-            -authenticationKeyIssuerID "$ISSUER_ID" \
-            -authenticationKeyPath ~/private_keys/AuthKey_${KEY_ID}.p8 \
+            CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
 
       - name: Exportieren & zu TestFlight hochladen
