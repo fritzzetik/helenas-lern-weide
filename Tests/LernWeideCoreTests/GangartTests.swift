@@ -1,4 +1,5 @@
 // GangartTests.swift
+import Foundation
 import Testing
 @testable import LernWeideCore
 
