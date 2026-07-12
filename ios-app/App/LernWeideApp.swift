@@ -14,10 +14,20 @@ import SwiftData
 struct LernWeideApp: App {
 
     let container: ModelContainer = {
+        let schema = Schema([Profil.self, StationsFortschritt.self, Tagesstatistik.self])
+        // Erst mit CloudKit-Sync (private iCloud-Datenbank) versuchen –
+        // falls das nicht geht (kein iCloud-Login, fehlende Capability),
+        // läuft die App mit identischem Code rein lokal weiter.
         do {
-            return try ModelContainer(for: Profil.self, StationsFortschritt.self, Tagesstatistik.self)
+            let mitSync = ModelConfiguration(schema: schema, cloudKitDatabase: .automatic)
+            return try ModelContainer(for: schema, configurations: [mitSync])
         } catch {
-            fatalError("SwiftData-Container konnte nicht erstellt werden: \(error)")
+            do {
+                let lokal = ModelConfiguration(schema: schema, cloudKitDatabase: .none)
+                return try ModelContainer(for: schema, configurations: [lokal])
+            } catch {
+                fatalError("SwiftData-Container konnte nicht erstellt werden: \(error)")
+            }
         }
     }()
 

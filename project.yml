@@ -28,6 +28,16 @@ targets:
         product: LernWeideCore
       - package: LernWeide
         product: MatheWeide
+    # iCloud/CloudKit: XcodeGen erzeugt die .entitlements-Datei beim Generieren.
+    # Voraussetzung: Auf developer.apple.com hat die App-ID die iCloud-Capability
+    # mit genau diesem Container (iCloud.at.zetik.helenaslernweide).
+    entitlements:
+      path: HelenasLernWeide.entitlements
+      properties:
+        com.apple.developer.icloud-services:
+          - CloudKit
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.at.zetik.helenaslernweide
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: at.zetik.helenaslernweide   # ← ggf. anpassen!
