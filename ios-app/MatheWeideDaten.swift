@@ -110,6 +110,13 @@ final class FortschrittsService {
         try? context.save()
     }
 
+    func setzeName(_ name: String) {
+        let bereinigt = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !bereinigt.isEmpty else { return }
+        profil().name = bereinigt
+        try? context.save()
+    }
+
     // MARK: Stationen
 
     /// Fortschritt einer Station – legt bei Bedarf einen leeren an.

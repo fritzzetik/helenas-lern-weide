@@ -22,6 +22,8 @@ struct TurnierpfadView: View {
     @State private var aktiveStation: MatheStation?
     @State private var zeigePause = false
     @State private var zeigeBericht = false
+    @State private var zeigeNamensDialog = false
+    @State private var neuerName = ""
 
     private var service: FortschrittsService { FortschrittsService(context: context) }
     private var klasse: String { profile.first?.klasse ?? "klasse3" }
@@ -66,10 +68,11 @@ struct TurnierpfadView: View {
     private var kopf: some View {
         let ids = pfad.stationen.map(\.rawValue)
         let schleifen = fortschritte.filter { $0.schleife && ids.contains($0.stationID) }.count
+        let name = profile.first?.name ?? "Helena"
         return HStack {
             Text("🐶").font(.system(size: 44))
             VStack(alignment: .leading) {
-                Text("Hallo \(service.profil().name)!").font(.title2.bold())
+                Text("Hallo \(name)!").font(.title2.bold())
                 Text("Schleifen: \(schleifen) von \(pfad.stationen.count) 🎀")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
@@ -78,6 +81,20 @@ struct TurnierpfadView: View {
         }
         .padding()
         .background(Color(red: 0.741, green: 0.890, blue: 0.941), in: RoundedRectangle(cornerRadius: 20))
+        .contentShape(RoundedRectangle(cornerRadius: 20))
+        // Aufs Namensschild tippen → Namen ändern. (Die Apple-ID darf eine
+        // App aus Datenschutzgründen nicht auslesen – deshalb einmal fragen.)
+        .onTapGesture {
+            neuerName = name
+            zeigeNamensDialog = true
+        }
+        .alert("Wie heißt du?", isPresented: $zeigeNamensDialog) {
+            TextField("Dein Vorname", text: $neuerName)
+            Button("Speichern") { service.setzeName(neuerName) }
+            Button("Abbrechen", role: .cancel) {}
+        } message: {
+            Text("Daisy und Bruno merken sich deinen Namen.")
+        }
     }
 
     private var berichtsKarte: some View {
