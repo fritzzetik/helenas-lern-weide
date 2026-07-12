@@ -762,18 +762,19 @@ function malTagesbericht(stats) {
 
 const PAUSE_SEKUNDEN = 180;
 
-function PausenTimer({ onFertig }) {
-  const [status, setStatus] = useState("laeuft"); // laeuft | fertig
-  const [restzeit, setRestzeit] = useState(PAUSE_SEKUNDEN);
-  // Das Pausenende ist ein fixer Zeitpunkt, keine Tick-Zählung:
-  // So läuft die Pause auch weiter, wenn das Display gesperrt oder die
-  // App im Hintergrund ist (dort friert der Browser setInterval ein).
-  const endeRef = useRef(Date.now() + PAUSE_SEKUNDEN * 1000);
+function PausenTimer({ endeZeit, onFertig }) {
+  // Das Pausenende kommt als fixer Zeitpunkt von außen (und liegt im
+  // localStorage): So läuft die Pause auch bei gesperrtem Display weiter –
+  // und Neuladen hilft nicht, die Restzeit bleibt die echte. 🙂
+  const [status, setStatus] = useState(Date.now() >= endeZeit ? "fertig" : "laeuft");
+  const [restzeit, setRestzeit] = useState(
+    Math.max(0, Math.ceil((endeZeit - Date.now()) / 1000))
+  );
 
   useEffect(() => {
     if (status !== "laeuft") return;
     const aktualisiere = () => {
-      const rest = Math.max(0, Math.ceil((endeRef.current - Date.now()) / 1000));
+      const rest = Math.max(0, Math.ceil((endeZeit - Date.now()) / 1000));
       setRestzeit(rest);
       if (rest <= 0) setStatus("fertig");
     };
@@ -787,7 +788,7 @@ function PausenTimer({ onFertig }) {
       document.removeEventListener("visibilitychange", aktualisiere);
       window.removeEventListener("focus", aktualisiere);
     };
-  }, [status]);
+  }, [status, endeZeit]);
 
   useEffect(() => {
     if (status === "fertig" && onFertig) onFertig();
@@ -871,6 +872,9 @@ export default function HelenasLernWeide() {
   const [quercheckRichtig, setQuercheckRichtig] = useState(null);
   const [pause, setPause] = useState(PAUSEN[0]);
   const [pauseFertig, setPauseFertig] = useState(false); // Weiter erst nach der Bewegungspause
+  // Pausenende als Zeitstempel im localStorage: Neuladen umgeht die Pause nicht.
+  const [pauseEnde, setPauseEnde] = useLokalGespeichert("pauseEnde", 0);
+  const [wartestation, setWartestation] = useState(null); // startet nach der Pause
   const [rundenErgebnis, setRundenErgebnis] = useState(null); // { sterne, level, schleifeNeu }
 
   // Heutige Statistik für Daisys Tagesbericht 📸 – bleibt lokal gespeichert
@@ -941,6 +945,14 @@ export default function HelenasLernWeide() {
   }
 
   function startRound(s) {
+    // Läuft noch eine Bewegungspause (auch nach Neuladen)? Dann erst fertig hüpfen!
+    if (Date.now() < pauseEnde) {
+      setWartestation(s);
+      setPause(pick(PAUSEN));
+      setPauseFertig(false);
+      setScreen("pause");
+      return;
+    }
     const startLevel = levels[s.id] ?? 0;
     setStation(s);
     setLevel(startLevel);
@@ -1007,6 +1019,7 @@ export default function HelenasLernWeide() {
       }
       setRundenErgebnis({ sterne: finaleSterne, level: neuesLevel, schleifeNeu, hatSchleife: schleifen[station.id] || schleifeNeu });
       setPauseFertig(false); // Bewegungspause ist Pflicht – Buttons erst danach
+      setPauseEnde(Date.now() + PAUSE_SEKUNDEN * 1000); // überlebt auch ein Neuladen
       setScreen("done");
     } else {
       const nr = taskNr + 1;
@@ -1329,7 +1342,7 @@ export default function HelenasLernWeide() {
             <div className="pause-box">
               <p className="pause-titel">Bewegungspause! 🤸</p>
               <p>{pause}</p>
-              <PausenTimer onFertig={() => setPauseFertig(true)} />
+              <PausenTimer endeZeit={pauseEnde} onFertig={() => setPauseFertig(true)} />
             </div>
             {pauseFertig && (
               <div className="done-buttons">
@@ -1340,6 +1353,35 @@ export default function HelenasLernWeide() {
                 ) : (
                   <button className="btn-primary" onClick={() => startRound(station)}>
                     Nochmal {station.emoji}
+                  </button>
+                )}
+                <button className="btn-secondary" onClick={() => setScreen("home")}>
+                  Zum Pfad <span className="weiss">🐴</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {screen === "pause" && (
+        <div className="screen">
+          <div className="card done-card">
+            <div className="big-emoji pop">🤸</div>
+            <h2>Erst fertig hüpfen!</h2>
+            <p className="done-text">
+              Die Bewegungspause läuft noch – Daisy wartet so lange auf dich.
+            </p>
+            <div className="pause-box">
+              <p className="pause-titel">Bewegungspause! 🤸</p>
+              <p>{pause}</p>
+              <PausenTimer endeZeit={pauseEnde} onFertig={() => setPauseFertig(true)} />
+            </div>
+            {pauseFertig && (
+              <div className="done-buttons">
+                {wartestation && (
+                  <button className="btn-primary" onClick={() => startRound(wartestation)}>
+                    Weiter geht&rsquo;s {wartestation.emoji}
                   </button>
                 )}
                 <button className="btn-secondary" onClick={() => setScreen("home")}>
