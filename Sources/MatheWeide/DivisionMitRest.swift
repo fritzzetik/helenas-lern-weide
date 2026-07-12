@@ -22,16 +22,18 @@ public struct DivisionsAufgabe: Equatable, Sendable {
     }
 }
 
-/// Erzeugt Aufgaben passend zur Gangart.
+/// Erzeugt Aufgaben passend zur Gangart – wie genRest im Prototyp:
+/// dividend = divisor · ergebnis + rest, mit Rest garantiert ≥ 1.
+/// („Rest 0" gehört didaktisch zu den In-Rechnungen, nicht hierher.)
 /// Nimmt einen RandomNumberGenerator entgegen → mit Seed vollständig reproduzierbar testbar.
 public enum DivisionsGenerator {
 
-    /// Wertebereiche je Gangart (Divisor, Dividend-Obergrenze).
-    static func bereich(fuer gangart: Gangart) -> (divisoren: ClosedRange<Int>, maxDividend: Int) {
+    /// Wertebereiche je Gangart (Divisoren, Ergebnis-Bereich).
+    static func bereich(fuer gangart: Gangart) -> (divisoren: [Int], ergebnis: ClosedRange<Int>) {
         switch gangart {
-        case .schritt: return (2...5, 30)
-        case .trab: return (2...9, 60)
-        case .galopp: return (3...9, 100)
+        case .schritt: return ([2, 3, 4, 5], 2...9)
+        case .trab: return (Array(3...9), 4...10)
+        case .galopp: return (Array(4...9), 9...15)
         }
     }
 
@@ -40,10 +42,9 @@ public enum DivisionsGenerator {
         using rng: inout some RandomNumberGenerator
     ) -> DivisionsAufgabe {
         let b = bereich(fuer: gangart)
-        let divisor = Int.random(in: b.divisoren, using: &rng)
-        // Dividend so wählen, dass ein echter Rest möglich, aber nicht garantiert ist –
-        // die Kinder sollen auch „Rest 0" kennenlernen.
-        let dividend = Int.random(in: divisor...b.maxDividend, using: &rng)
-        return DivisionsAufgabe(dividend: dividend, divisor: divisor)
+        let divisor = b.divisoren.randomElement(using: &rng)!
+        let ergebnis = Int.random(in: b.ergebnis, using: &rng)
+        let rest = Int.random(in: 1...(divisor - 1), using: &rng)
+        return DivisionsAufgabe(dividend: divisor * ergebnis + rest, divisor: divisor)
     }
 }

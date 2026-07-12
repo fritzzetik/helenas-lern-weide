@@ -38,10 +38,11 @@ struct DivisionMitRestTests {
         for _ in 1...200 {
             let a = DivisionsGenerator.neueAufgabe(gangart: gangart, using: &rng)
             #expect(b.divisoren.contains(a.divisor))
-            #expect(a.dividend >= a.divisor)
-            #expect(a.dividend <= b.maxDividend)
+            #expect(b.ergebnis.contains(a.ergebnis))
             // Invariante der Division mit Rest:
             #expect(a.ergebnis * a.divisor + a.rest == a.dividend)
+            // Rest ist nie 0 – echte Division MIT Rest, wie im Prototyp:
+            #expect(a.rest >= 1)
             #expect(a.rest < a.divisor)
         }
     }
