@@ -108,9 +108,14 @@ struct Klasse3GeneratorenTests {
             default: Issue.record("Unbekannter Operator in \(a.frage)")
             }
         }
-        // Platzhalter-Formen („? + b = ziel") werden übersprungen –
-        // aber ein Großteil der Fragen muss parsebar sein.
-        #expect(geprueft > 0)
+        // Platzhalter-Formen („? + b = ziel") werden übersprungen. Bei Aufwärmen
+        // und Plus & Minus 1000 besteht der Galopp NUR aus solchen Formen –
+        // überall sonst muss der Parser Fragen gefunden haben.
+        let nurPlatzhalter = gangart == .galopp
+            && (station == .aufwaermen || station == .plusMinus1000)
+        if !nurPlatzhalter {
+            #expect(geprueft > 0)
+        }
     }
 
     @Test("istRichtig akzeptiert nur die korrekte Antwort")
