@@ -47,6 +47,20 @@ final class Profil {
     }
 }
 
+/// Heutige Übungs-Statistik für Daisys Tagesbericht 📸.
+/// Ein Datensatz pro Kalendertag (Schlüssel "JJJJ-MM-TT").
+@Model
+final class Tagesstatistik {
+    var datum: String = ""
+    var aufgaben: Int = 0
+    var sterne: Int = 0
+    var schleifen: Int = 0
+
+    init(datum: String) {
+        self.datum = datum
+    }
+}
+
 /// Fortschritt pro Turnier-Station.
 /// stationID entspricht den IDs aus dem Turnierpfad
 /// (z. B. "s3_warm", "s3_rest", "s4_final").
@@ -117,20 +131,52 @@ final class FortschrittsService {
     /// Spiellogik, hier wird nur persistiert.
     func rundeBeendet(
         stationID: String,
+        aufgaben: Int,
         sterne: Int,
         gangart: Int,
         schleifeGewonnen: Bool
     ) {
         let f = fortschritt(fuer: stationID)
+        let schleifeNeu = schleifeGewonnen && !f.schleife
         f.rundenGespielt += 1
         f.gangart = gangart
         f.besteSterne = max(f.besteSterne, sterne)
         f.zuletztGeuebt = Date()
-        if schleifeGewonnen && !f.schleife {
+        if schleifeNeu {
             f.schleife = true
             f.schleifeAm = Date()
         }
+
+        // Daisys Tagesbericht 📸 mitzählen
+        let heute = heutigeStatistik()
+        heute.aufgaben += aufgaben
+        heute.sterne += sterne
+        if schleifeNeu { heute.schleifen += 1 }
+
         try? context.save()
+    }
+
+    // MARK: Tagesstatistik (Daisys Tagesbericht 📸)
+
+    /// Kalendertag als Schlüssel, z. B. "2026-07-12".
+    static func datumsSchluessel(_ tag: Date = Date()) -> String {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.dateFormat = "yyyy-MM-dd"
+        return df.string(from: tag)
+    }
+
+    /// Statistik für heute – legt bei Bedarf einen frischen Datensatz an.
+    func heutigeStatistik() -> Tagesstatistik {
+        let heute = Self.datumsSchluessel()
+        let deskriptor = FetchDescriptor<Tagesstatistik>(
+            predicate: #Predicate { $0.datum == heute }
+        )
+        if let t = ((try? context.fetch(deskriptor)) ?? []).first { return t }
+        let neu = Tagesstatistik(datum: heute)
+        context.insert(neu)
+        try? context.save()
+        return neu
     }
 
     // MARK: Freischalt-Logik (wie im Prototyp)
@@ -169,6 +215,17 @@ final class FortschrittsService {
                 behalten.besteSterne = max(behalten.besteSterne, d.besteSterne)
                 behalten.rundenGespielt += d.rundenGespielt
                 behalten.zuletztGeuebt = [behalten.zuletztGeuebt, d.zuletztGeuebt].compactMap { $0 }.max()
+                context.delete(d)
+            }
+        }
+        // Tagesstatistiken: Duplikate desselben Tages aufsummieren.
+        let tage = (try? context.fetch(FetchDescriptor<Tagesstatistik>())) ?? []
+        for (_, dubletten) in Dictionary(grouping: tage, by: \.datum) where dubletten.count > 1 {
+            let behalten = dubletten[0]
+            for d in dubletten.dropFirst() {
+                behalten.aufgaben += d.aufgaben
+                behalten.sterne += d.sterne
+                behalten.schleifen += d.schleifen
                 context.delete(d)
             }
         }

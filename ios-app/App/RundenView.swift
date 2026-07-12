@@ -251,6 +251,7 @@ struct RundenView: View {
     private func rundeSpeichern() {
         FortschrittsService(context: context).rundeBeendet(
             stationID: station.rawValue,
+            aufgaben: Runde.aufgabenProRunde,
             sterne: runde.sterne,
             gangart: runde.gangart.rawValue,
             schleifeGewonnen: runde.schleifeVerdient

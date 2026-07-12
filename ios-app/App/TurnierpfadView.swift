@@ -21,6 +21,7 @@ struct TurnierpfadView: View {
 
     @State private var aktiveStation: MatheStation?
     @State private var zeigePause = false
+    @State private var zeigeBericht = false
 
     private var service: FortschrittsService { FortschrittsService(context: context) }
     private var klasse: String { profile.first?.klasse ?? "klasse3" }
@@ -34,6 +35,7 @@ struct TurnierpfadView: View {
                     ForEach(pfad.stationen) { station in
                         stationsKarte(station)
                     }
+                    berichtsKarte
                 }
                 .padding()
             }
@@ -55,6 +57,9 @@ struct TurnierpfadView: View {
             .fullScreenCover(isPresented: $zeigePause) {
                 BewegungspauseView()
             }
+            .sheet(isPresented: $zeigeBericht) {
+                TagesberichtSheet(statistik: service.heutigeStatistik())
+            }
         }
     }
 
@@ -73,6 +78,25 @@ struct TurnierpfadView: View {
         }
         .padding()
         .background(Color(red: 0.741, green: 0.890, blue: 0.941), in: RoundedRectangle(cornerRadius: 20))
+    }
+
+    private var berichtsKarte: some View {
+        Button { zeigeBericht = true } label: {
+            HStack(spacing: 14) {
+                Text("📸").font(.system(size: 34))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Daisys Tagesbericht").font(.headline)
+                    Text("heute geübt – zum Herzeigen und Verschicken")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text("💌").font(.title2)
+            }
+            .padding()
+            .background(Color(red: 1.0, green: 0.945, blue: 0.863), in: RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color(red: 0.2, green: 0.16, blue: 0.12))
     }
 
     @ViewBuilder

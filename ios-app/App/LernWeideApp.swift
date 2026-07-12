@@ -15,7 +15,7 @@ struct LernWeideApp: App {
 
     let container: ModelContainer = {
         do {
-            return try ModelContainer(for: Profil.self, StationsFortschritt.self)
+            return try ModelContainer(for: Profil.self, StationsFortschritt.self, Tagesstatistik.self)
         } catch {
             fatalError("SwiftData-Container konnte nicht erstellt werden: \(error)")
         }
