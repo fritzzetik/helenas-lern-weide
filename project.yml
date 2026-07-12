@@ -1,0 +1,44 @@
+# project.yml – XcodeGen erzeugt daraus HelenasLernWeide.xcodeproj
+# (auf dem CI-Runner per `xcodegen generate`, lokal am Mac genauso)
+#
+# ⚠️ WICHTIG: bundleIdPrefix/PRODUCT_BUNDLE_IDENTIFIER unten muss EXAKT
+# deiner registrierten Bundle ID entsprechen (developer.apple.com → Identifiers)!
+
+name: HelenasLernWeide
+options:
+  bundleIdPrefix: at.zetik
+  deploymentTarget:
+    iOS: "26.0"
+
+packages:
+  LernWeide:
+    path: .
+
+targets:
+  HelenasLernWeide:
+    type: application
+    platform: iOS
+    sources:
+      - path: ios-app
+        excludes:
+          - "BrunoErklaerungsTests.swift"   # Tests gehören nicht ins App-Target
+          - "README.md"
+    dependencies:
+      - package: LernWeide
+        product: LernWeideCore
+      - package: LernWeide
+        product: MatheWeide
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: at.zetik.helenaslernweide   # ← ggf. anpassen!
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"          # wird im CI durch die Run-Nummer ersetzt
+        DEVELOPMENT_TEAM: ""                  # leer = automatisch (Cloud Signing via API-Key)
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "Helenas Lern-Weide"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"         # iPhone + iPad
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

@@ -1,0 +1,70 @@
+# TestFlight-Upload – manuell über den Actions-Tab auslösbar ("Run workflow").
+#
+# Signing komplett ohne Mac: Xcode "Cloud Signing" erzeugt und verwaltet
+# Zertifikat + Provisioning Profile automatisch über den App Store Connect
+# API-Key (die drei GitHub Secrets). Der Upload passiert direkt aus
+# xcodebuild -exportArchive (destination: upload).
+#
+# Build-Nummer = GitHub-Run-Nummer → jeder Lauf ist automatisch neuer.
+
+name: TestFlight
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  testflight:
+    name: Archivieren, signieren, hochladen
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: XcodeGen installieren
+        run: brew install xcodegen
+
+      - name: API-Key ablegen
+        env:
+          API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+        run: |
+          mkdir -p ~/private_keys
+          echo "$API_KEY" > ~/private_keys/AuthKey_${KEY_ID}.p8
+
+      - name: Xcode-Projekt erzeugen
+        run: xcodegen generate
+
+      - name: Archivieren (Cloud Signing)
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          xcodebuild archive \
+            -project HelenasLernWeide.xcodeproj \
+            -scheme HelenasLernWeide \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/LernWeide.xcarchive \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            -allowProvisioningUpdates \
+            -allowProvisioningDeviceRegistration \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID" \
+            -authenticationKeyPath ~/private_keys/AuthKey_${KEY_ID}.p8
+
+      - name: Exportieren & zu TestFlight hochladen
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/LernWeide.xcarchive \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath build/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID" \
+            -authenticationKeyPath ~/private_keys/AuthKey_${KEY_ID}.p8
+
+      - name: Aufräumen (Key löschen)
+        if: always()
+        run: rm -rf ~/private_keys

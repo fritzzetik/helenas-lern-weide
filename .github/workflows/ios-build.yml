@@ -1,0 +1,44 @@
+# Baut die iOS-App für den Simulator bei jedem Push, der iOS-Code berührt.
+# Das ist das Sicherheitsnetz für Weg C (Coden ohne Mac): Compile-Fehler
+# tauchen hier auf, ohne dass ein signierter Build nötig ist.
+
+name: iOS-Build-Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ios-app/**"
+      - "Sources/**"
+      - "project.yml"
+      - ".github/workflows/ios-build.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "ios-app/**"
+      - "Sources/**"
+      - "project.yml"
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: App bauen (Simulator, ohne Signing)
+    runs-on: macos-26
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: XcodeGen installieren
+        run: brew install xcodegen
+
+      - name: Xcode-Projekt erzeugen
+        run: xcodegen generate
+
+      - name: Build für Simulator
+        run: |
+          xcodebuild build \
+            -project HelenasLernWeide.xcodeproj \
+            -scheme HelenasLernWeide \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions || exit ${PIPESTATUS[0]}
