@@ -17,7 +17,8 @@ Der erste Stall auf der Weide ist **Mathe** (3./4. Klasse, österreichischer Leh
 | `Sources/LernWeideCore` | Fachübergreifend: Gangarten (Schritt → Trab → Galopp), adaptive Schwierigkeit, Fortschritt |
 | `Sources/MatheWeide` | Mathe-Aufgabenlogik (z. B. Division mit Rest) |
 | `Tests/` | Swift-Testing-Suite (läuft automatisch per CI) |
-| `web-prototype/` | React-Prototyp (Web-Testversion) |
+| `ios-app/` | iOS-App-Schicht: Bruno-Erklärungsservice (Foundation Models), Tests, SwiftData-Persistenz – wird am Mac ins Xcode-Projekt eingebunden, nicht von der CI kompiliert |
+| `web-prototype/` | React-Prototyp `helenas-lern-weide.jsx` (Version 5 mit Daisys Tagesbericht) – sofort testbar |
 | `.github/workflows/ci.yml` | CI: baut & testet auf macOS-Runnern bei jedem Push |
 
 ## Entwicklung ohne Mac
