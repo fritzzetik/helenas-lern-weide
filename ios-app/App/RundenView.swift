@@ -259,7 +259,16 @@ struct RundenView: View {
         VStack(spacing: 18) {
             Text("🐶").font(.system(size: 60))
             Text("Bruno erklärt:").font(.headline)
-            Text(text).font(.title3).multilineTextAlignment(.center).padding(.horizontal)
+            // Scrollbar statt fixer Höhe – längere Erklärungen wurden
+            // sonst vom Sheet mit „…" abgeschnitten.
+            ScrollView {
+                Text(text)
+                    .font(.title3)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal)
+            }
             Button {
                 brunoText = nil
                 quercheckStarten()
@@ -272,7 +281,7 @@ struct RundenView: View {
             .padding(.horizontal)
         }
         .padding(.vertical, 30)
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
         .interactiveDismissDisabled()
     }
 
