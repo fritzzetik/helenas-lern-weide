@@ -35,14 +35,14 @@ struct AppAufgabe: Sendable {
         case .zahl(let z):
             felder = [Feld(label: "=", antwort: z.antwort)]
         case .divisionMitRest(let d):
-            felder = [Feld(label: "=", antwort: d.ergebnis),
+            felder = [Feld(label: "Ergebnis", antwort: d.ergebnis),
                       Feld(label: "Rest", antwort: d.rest)]
         }
     }
 
     var antwortText: String {
-        felder.map { $0.label == "=" ? "\($0.antwort)" : "\($0.label) \($0.antwort)" }
-            .joined(separator: ", ")
+        if felder.count == 1 { return "\(felder[0].antwort)" }
+        return "\(felder[0].antwort), Rest \(felder[1].antwort)"
     }
 
     /// Brücke zum BrunoErklaerungsService (dessen BrunoAufgabe-Modell).

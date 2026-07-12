@@ -2,11 +2,10 @@
 //  TurnierpfadView.swift
 //  Helenas Lern-Weide 🐶🐴
 //
-//  Der Turnierpfad: Stationen in Lehrplan-Reihenfolge (aus dem Package,
-//  identisch zum React-Prototyp). Nur die aktuelle ist offen 🔓,
-//  geschaffte 🎀 bleiben als Freies Training offen, kommende sind
-//  sichtbar aber gesperrt 🔒. Läuft noch eine Bewegungspause, führt
-//  jeder Stationsstart zuerst in die Warteschleife.
+//  Der Turnierpfad im Prototyp-Look: Hero mit Daisy und Bruno,
+//  Daisys Tagesbericht, Klassen-Schalter, Stationen mit Akzentfarben
+//  und 🐾-Verbindungen, ▶️ an der aktuellen Station. Läuft noch eine
+//  Bewegungspause, führt jeder Stationsstart zuerst in die Warteschleife.
 //
 
 import SwiftUI
@@ -26,33 +25,29 @@ struct TurnierpfadView: View {
     @State private var neuerName = ""
 
     private var service: FortschrittsService { FortschrittsService(context: context) }
+    private var name: String { profile.first?.name ?? "Helena" }
     private var klasse: String { profile.first?.klasse ?? "klasse3" }
     private var pfad: Turnierpfad<MatheStation> { Pfade.pfad(fuer: klasse) }
+
+    /// Geschaffte Stationen – reaktiv aus der Query, Logik aus dem Core.
+    private var geschafft: Set<MatheStation> {
+        Set(fortschritte.filter(\.schleife).compactMap { MatheStation(rawValue: $0.stationID) })
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 14) {
-                    kopf
-                    ForEach(pfad.stationen) { station in
-                        stationsKarte(station)
-                    }
+                VStack(spacing: 16) {
+                    hero
                     berichtsKarte
+                    klassenSchalter
+                    stationen
+                    fussnote
                 }
                 .padding()
             }
-            .background(Color(red: 1.0, green: 0.976, blue: 0.925))   // cream
-            .navigationTitle("Helenas Lern-Weide")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button("3. Klasse 🏠") { service.setzeKlasse("klasse3") }
-                        Button("4. Klasse 🏇") { service.setzeKlasse("klasse4") }
-                    } label: {
-                        Text(klasse == "klasse4" ? "4. Klasse" : "3. Klasse")
-                    }
-                }
-            }
+            .background(Palette.cream)
+            .toolbar(.hidden, for: .navigationBar)
             .fullScreenCover(item: $aktiveStation) { station in
                 RundenView(station: station, pfad: pfad)
             }
@@ -65,24 +60,26 @@ struct TurnierpfadView: View {
         }
     }
 
-    private var kopf: some View {
-        let ids = pfad.stationen.map(\.rawValue)
-        let schleifen = fortschritte.filter { $0.schleife && ids.contains($0.stationID) }.count
-        let name = profile.first?.name ?? "Helena"
-        return HStack {
-            Text("🐶").font(.system(size: 44))
-            VStack(alignment: .leading) {
-                Text("Hallo \(name)!").font(.title2.bold())
-                Text("Schleifen: \(schleifen) von \(pfad.stationen.count) 🎀")
-                    .font(.subheadline).foregroundStyle(.secondary)
+    // MARK: Hero
+
+    private var hero: some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 10) {
+                Text("🐶").font(.system(size: 52))
+                DaisyText(groesse: 52)
             }
-            Spacer()
-            Text("🐴").font(.system(size: 44))
+            Text("Hallo \(name)!")
+                .font(.system(size: 30, weight: .heavy, design: .rounded))
+                .foregroundStyle(Palette.ink)
+            Text("Dein Turnierpfad wartet – Station für Station zur nächsten Schleife! 🎀")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Palette.soft)
+                .multilineTextAlignment(.center)
         }
-        .padding()
-        .background(Color(red: 0.741, green: 0.890, blue: 0.941), in: RoundedRectangle(cornerRadius: 20))
-        .contentShape(RoundedRectangle(cornerRadius: 20))
-        // Aufs Namensschild tippen → Namen ändern. (Die Apple-ID darf eine
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
+        .contentShape(Rectangle())
+        // Auf die Begrüßung tippen → Namen ändern. (Die Apple-ID darf eine
         // App aus Datenschutzgründen nicht auslesen – deshalb einmal fragen.)
         .onTapGesture {
             neuerName = name
@@ -97,30 +94,69 @@ struct TurnierpfadView: View {
         }
     }
 
+    // MARK: Daisys Tagesbericht
+
     private var berichtsKarte: some View {
         Button { zeigeBericht = true } label: {
-            HStack(spacing: 14) {
-                Text("📸").font(.system(size: 34))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Daisys Tagesbericht").font(.headline)
-                    Text("heute geübt – zum Herzeigen und Verschicken")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+            HStack(spacing: 12) {
+                Text("📸").font(.system(size: 28))
+                Text("Daisys Tagesbericht").font(.headline)
                 Spacer()
-                Text("💌").font(.title2)
+                let heute = service.heutigeStatistik()
+                if heute.aufgaben > 0 {
+                    Text("\(heute.aufgaben) Aufgaben heute")
+                        .font(.caption.bold())
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Palette.sun.opacity(0.5), in: Capsule())
+                }
+                Text("💌").font(.title3)
             }
-            .padding()
-            .background(Color(red: 1.0, green: 0.945, blue: 0.863), in: RoundedRectangle(cornerRadius: 16))
+            .padding(14)
+            .background(.white, in: RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
-        .foregroundStyle(Color(red: 0.2, green: 0.16, blue: 0.12))
+        .foregroundStyle(Palette.ink)
     }
 
-    @ViewBuilder
-    private func stationsKarte(_ station: MatheStation) -> some View {
-        let status = service.status(stationID: station.rawValue,
-                                    inReihenfolge: pfad.stationen.map(\.rawValue))
+    // MARK: Klassen-Schalter
 
+    private var klassenSchalter: some View {
+        HStack(spacing: 8) {
+            klassenKnopf("klasse3", titel: "🏠 3. Klasse")
+            klassenKnopf("klasse4", titel: "🏇 4. Klasse")
+        }
+    }
+
+    private func klassenKnopf(_ id: String, titel: String) -> some View {
+        Button { service.setzeKlasse(id) } label: {
+            Text(titel)
+                .font(.subheadline.bold())
+                .frame(maxWidth: .infinity, minHeight: 40)
+                .background(klasse == id ? Palette.grass : .white, in: Capsule())
+                .foregroundStyle(klasse == id ? .white : Palette.ink)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Stationen mit 🐾-Verbindungen
+
+    private var stationen: some View {
+        let offen = geschafft
+        let aktuelle = pfad.naechsteOffene(geschafft: offen)
+        return VStack(spacing: 0) {
+            ForEach(Array(pfad.stationen.enumerated()), id: \.element) { index, station in
+                if index > 0 {
+                    Text("🐾")
+                        .font(.system(size: 15))
+                        .opacity(pfad.status(station, geschafft: offen) == .gesperrt ? 0.2 : 0.7)
+                        .padding(.vertical, 3)
+                }
+                stationsKarte(station, status: pfad.status(station, geschafft: offen), istAktuell: station == aktuelle)
+            }
+        }
+    }
+
+    private func stationsKarte(_ station: MatheStation, status: StationsStatus, istAktuell: Bool) -> some View {
         Button {
             guard status != .gesperrt else { return }
             // Bewegungspause ist Pflicht – erst fertig hüpfen, dann rechnen.
@@ -130,26 +166,51 @@ struct TurnierpfadView: View {
                 aktiveStation = station
             }
         } label: {
-            HStack(spacing: 14) {
-                Text(station.emoji).font(.system(size: 34))
+            HStack(spacing: 12) {
+                Text(station.emoji)
+                    .font(.system(size: 26))
+                    .frame(width: 48, height: 48)
+                    .background(station.akzentfarbe.opacity(0.25), in: Circle())
                 VStack(alignment: .leading, spacing: 2) {
                     Text(station.titel).font(.headline).multilineTextAlignment(.leading)
-                    Text(status == .geschafft ? "Freies Training" : station.untertitel)
-                        .font(.caption).foregroundStyle(.secondary)
+                    Text(untertitel(station, status: status))
+                        .font(.caption).foregroundStyle(Palette.soft)
                 }
                 Spacer()
                 switch status {
-                case .geschafft: Text("🎀").font(.title)
-                case .offen:     Text("🔓").font(.title2)
-                case .gesperrt:  Text("🔒").font(.title2).opacity(0.4)
+                case .geschafft: Text("🎀").font(.title2)
+                case .offen: Text(istAktuell ? "▶️" : "").font(.title3)
+                case .gesperrt: Text("🔒").font(.title3).opacity(0.4)
                 }
             }
-            .padding()
+            .padding(12)
             .background(.white, in: RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(istAktuell ? station.akzentfarbe : .clear, lineWidth: 3)
+            )
             .opacity(status == .gesperrt ? 0.55 : 1)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(Color(red: 0.2, green: 0.16, blue: 0.12))
+        .foregroundStyle(Palette.ink)
         .disabled(status == .gesperrt)
+    }
+
+    private func untertitel(_ station: MatheStation, status: StationsStatus) -> String {
+        switch status {
+        case .geschafft: return "Freies Training – jederzeit üben!"
+        case .offen: return station.untertitel
+        case .gesperrt: return "Noch verschlossen"
+        }
+    }
+
+    // MARK: Fußnote
+
+    private var fussnote: some View {
+        Text("🎀 Schleife = mindestens \(Runde.schleifeMinSterne) von \(Runde.aufgabenProRunde) Sternen im \(Runde.schleifeMinGangart.anzeigename) oder schneller.\nGeschaffte Stationen bleiben als Freies Training offen. 🐾")
+            .font(.caption)
+            .foregroundStyle(Palette.soft)
+            .multilineTextAlignment(.center)
+            .padding(.top, 4)
     }
 }
