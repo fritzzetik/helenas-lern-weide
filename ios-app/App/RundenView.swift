@@ -55,8 +55,14 @@ struct RundenView: View {
             .navigationTitle("\(station.emoji) \(runde.gangart.anzeigename)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Zur Weide") { dismiss() }
+                // Nach der Runde führt nur noch der große Button unter dem
+                // Pausen-Timer zurück – sonst gäbe es einen Seitenausgang
+                // aus der Pflicht-Pause (der dann doch in der Warteschleife
+                // endet, aber das verwirrt nur).
+                if !fertig {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Zur Weide") { dismiss() }
+                    }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Text("\(min(runde.position + 1, Runde.aufgabenProRunde)) / \(Runde.aufgabenProRunde)")
