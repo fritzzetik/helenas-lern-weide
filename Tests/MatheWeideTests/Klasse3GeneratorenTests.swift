@@ -134,13 +134,14 @@ struct Klasse3GeneratorenTests {
     }
 
     /// Zerlegt Fragen der Form „a <op> b = ?" – alles andere ergibt nil.
+    /// Tausenderpunkte („12.300") werden entfernt.
     static func zerlegeEinfacheRechnung(_ frage: String) -> (Int, String, Int)? {
         let teile = frage.split(separator: " ").map(String.init)
         guard teile.count == 5,
               teile[3] == "=",
               teile[4] == "?",
-              let x = Int(teile[0]),
-              let y = Int(teile[2])
+              let x = Int(teile[0].split(separator: ".").joined()),
+              let y = Int(teile[2].split(separator: ".").joined())
         else { return nil }
         return (x, teile[1], y)
     }
