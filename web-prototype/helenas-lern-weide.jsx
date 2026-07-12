@@ -454,6 +454,40 @@ const PAUSEN = [
 
 const LOB = ["Super, Helena! 🌟", "Wuff! Richtig! 🐶", "Daisy wiehert vor Freude! 🐴", "Stark gerechnet! 💪", "Genau richtig! ✨"];
 
+/* ---------- Lokales Speichern (localStorage) ----------
+   Schleifen, Gangarten, Klasse und Tagesstatistik bleiben auf dem
+   Gerät erhalten – auch nach Neuladen oder Browser-Neustart.
+   try/catch, weil localStorage z. B. im privaten Modus fehlen kann. */
+
+const SPEICHER_PREFIX = "lernweide.";
+
+function ladeGespeichert(schluessel, fallback) {
+  try {
+    const roh = localStorage.getItem(SPEICHER_PREFIX + schluessel);
+    return roh === null ? fallback : JSON.parse(roh);
+  } catch {
+    return fallback;
+  }
+}
+
+function useLokalGespeichert(schluessel, startwert) {
+  const [wert, setWert] = useState(() => ladeGespeichert(schluessel, startwert));
+  useEffect(() => {
+    try {
+      localStorage.setItem(SPEICHER_PREFIX + schluessel, JSON.stringify(wert));
+    } catch {
+      // Speichern nicht möglich (z. B. privater Modus) – die App läuft trotzdem.
+    }
+  }, [schluessel, wert]);
+  return [wert, setWert];
+}
+
+/** Heutiges Datum als "JJJJ-MM-TT" – für den Tages-Reset der Statistik. */
+function heutigesDatum() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 /* ---------- KI-Erklärung + Quercheck ---------- */
 
 async function holeErklaerung(task, falscheAntwortText) {
@@ -824,7 +858,7 @@ function GangartChip({ level }) {
 
 export default function HelenasLernWeide() {
   const [screen, setScreen] = useState("home");
-  const [klasse, setKlasse] = useState("klasse3"); // wird später ein Profil-Setting
+  const [klasse, setKlasse] = useLokalGespeichert("klasse", "klasse3"); // wird später ein Profil-Setting
   const [station, setStation] = useState(null);
   const [task, setTask] = useState(null);
   const [taskNr, setTaskNr] = useState(0);
@@ -839,17 +873,34 @@ export default function HelenasLernWeide() {
   const [pauseFertig, setPauseFertig] = useState(false); // Weiter erst nach der Bewegungspause
   const [rundenErgebnis, setRundenErgebnis] = useState(null); // { sterne, level, schleifeNeu }
 
-  // Heutige Statistik für Daisys Tagesbericht 📸
-  // (im Web-Prototyp pro Sitzung – in der Swift-Version aus SwiftData)
-  const [heute, setHeute] = useState({ aufgaben: 0, sterne: 0, schleifen: 0 });
+  // Heutige Statistik für Daisys Tagesbericht 📸 – bleibt lokal gespeichert
+  // und beginnt an einem neuen Tag automatisch bei null.
+  const [heute, setHeute] = useLokalGespeichert("heute", {
+    datum: heutigesDatum(),
+    aufgaben: 0,
+    sterne: 0,
+    schleifen: 0,
+  });
+  useEffect(() => {
+    if (heute.datum !== heutigesDatum()) {
+      setHeute({ datum: heutigesDatum(), aufgaben: 0, sterne: 0, schleifen: 0 });
+    }
+  }, [heute.datum]);
   const [berichtUrl, setBerichtUrl] = useState(null);
   const berichtCanvasRef = useRef(null);
 
   // Turnier-Fortschritt: welche Stationen haben schon eine Schleife 🎀?
-  const [schleifen, setSchleifen] = useState(() => Object.fromEntries(ALLE_STATION_IDS.map((id) => [id, false])));
+  // Bleibt lokal gespeichert – einmal Geschafftes ist nie wieder weg.
+  const [schleifen, setSchleifen] = useLokalGespeichert(
+    "schleifen",
+    Object.fromEntries(ALLE_STATION_IDS.map((id) => [id, false]))
+  );
 
-  // Gangart pro Station (bleibt in der Sitzung erhalten)
-  const [levels, setLevels] = useState(() => Object.fromEntries(ALLE_STATION_IDS.map((id) => [id, 0])));
+  // Gangart pro Station – auch über Sitzungen hinweg.
+  const [levels, setLevels] = useLokalGespeichert(
+    "levels",
+    Object.fromEntries(ALLE_STATION_IDS.map((id) => [id, 0]))
+  );
   const [level, setLevel] = useState(0);
   const [upStreak, setUpStreak] = useState(0);
   const [downStreak, setDownStreak] = useState(0);
@@ -858,7 +909,7 @@ export default function HelenasLernWeide() {
   const timerRef = useRef(null);
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
-  const pfad = TURNIERPFADE.find((p) => p.id === klasse);
+  const pfad = TURNIERPFADE.find((p) => p.id === klasse) ?? TURNIERPFADE[0];
 
   /* Eine Station ist offen, wenn sie die erste ist oder die vorige
      eine Schleife hat. Geschaffte Stationen bleiben immer offen. */
@@ -964,12 +1015,17 @@ export default function HelenasLernWeide() {
       setPhase("frage");
     }
 
-    // Tages-Statistik für Daisys Bericht 📸
-    setHeute((h) => ({
-      aufgaben: h.aufgaben + 1,
-      sterne: h.sterne + (mitStern ? 1 : 0),
-      schleifen: h.schleifen + (schleifeNeu ? 1 : 0),
-    }));
+    // Tages-Statistik für Daisys Bericht 📸 – nach Mitternacht frisch anfangen
+    setHeute((h) => {
+      const datum = heutigesDatum();
+      const basis = h.datum === datum ? h : { aufgaben: 0, sterne: 0, schleifen: 0 };
+      return {
+        datum,
+        aufgaben: basis.aufgaben + 1,
+        sterne: basis.sterne + (mitStern ? 1 : 0),
+        schleifen: basis.schleifen + (schleifeNeu ? 1 : 0),
+      };
+    });
   }
 
   function istRichtig(eingabe) {
