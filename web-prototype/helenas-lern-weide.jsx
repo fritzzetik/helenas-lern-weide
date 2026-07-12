@@ -14,7 +14,8 @@ import { useState, useEffect, useRef } from "react";
    - Teilen per iMessage/SMS über das Teilen-Menü des iPhones
 
    Außerdem: Turnierpfad nach Lehrplan, Schleifen 🎀, adaptive
-   Gangarten, Wiederholungs-Mix, 3-Minuten-Bewegungspause,
+   Gangarten, Wiederholungs-Mix, verpflichtende 3-Minuten-
+   Bewegungspause (startet automatisch, kein Überspringen),
    KI-Erklärung + Quercheck bei Fehlern. ADHS-freundlich.
    ============================================================ */
 
@@ -720,12 +721,15 @@ function malTagesbericht(stats) {
   return c;
 }
 
-/* ---------- Bewegungspausen-Timer (3 Minuten) ---------- */
+/* ---------- Bewegungspausen-Timer (3 Minuten, verpflichtend) ----------
+   Startet automatisch und kann nicht übersprungen werden: Bewegung ist
+   Teil des Lernens, keine Option. Erst wenn die Pause vorbei ist,
+   erscheinen die Weiter-Buttons (siehe done-Screen). */
 
 const PAUSE_SEKUNDEN = 180;
 
-function PausenTimer() {
-  const [status, setStatus] = useState("bereit"); // bereit | laeuft | fertig
+function PausenTimer({ onFertig }) {
+  const [status, setStatus] = useState("laeuft"); // laeuft | fertig
   const [restzeit, setRestzeit] = useState(PAUSE_SEKUNDEN);
 
   useEffect(() => {
@@ -743,17 +747,13 @@ function PausenTimer() {
     return () => clearInterval(intervall);
   }, [status]);
 
+  useEffect(() => {
+    if (status === "fertig" && onFertig) onFertig();
+  }, [status, onFertig]);
+
   const min = Math.floor(restzeit / 60);
   const sek = String(restzeit % 60).padStart(2, "0");
   const pct = ((PAUSE_SEKUNDEN - restzeit) / PAUSE_SEKUNDEN) * 100;
-
-  if (status === "bereit") {
-    return (
-      <button className="btn-timer" onClick={() => setStatus("laeuft")}>
-        ⏱️ 3-Minuten-Pause starten
-      </button>
-    );
-  }
 
   if (status === "fertig") {
     return (
@@ -773,9 +773,7 @@ function PausenTimer() {
         <div className="timer-fill" style={{ width: `${pct}%` }} />
         <div className="timer-daisy weiss" style={{ left: `calc(${pct}% - 14px)` }}>🐴</div>
       </div>
-      <button className="btn-timer-klein" onClick={() => { setStatus("bereit"); setRestzeit(PAUSE_SEKUNDEN); }}>
-        Fertig – zurück zum Rechnen
-      </button>
+      <p className="pause-hinweis">Wenn Daisy am Ziel ist, geht&rsquo;s weiter!</p>
     </div>
   );
 }
@@ -830,6 +828,7 @@ export default function HelenasLernWeide() {
   const [lob, setLob] = useState(LOB[0]);
   const [quercheckRichtig, setQuercheckRichtig] = useState(null);
   const [pause, setPause] = useState(PAUSEN[0]);
+  const [pauseFertig, setPauseFertig] = useState(false); // Weiter erst nach der Bewegungspause
   const [rundenErgebnis, setRundenErgebnis] = useState(null); // { sterne, level, schleifeNeu }
 
   // Heutige Statistik für Daisys Tagesbericht 📸
@@ -948,6 +947,7 @@ export default function HelenasLernWeide() {
         setSchleifen((s) => ({ ...s, [station.id]: true }));
       }
       setRundenErgebnis({ sterne: finaleSterne, level: neuesLevel, schleifeNeu, hatSchleife: schleifen[station.id] || schleifeNeu });
+      setPauseFertig(false); // Bewegungspause ist Pflicht – Buttons erst danach
       setScreen("done");
     } else {
       const nr = taskNr + 1;
@@ -1265,22 +1265,24 @@ export default function HelenasLernWeide() {
             <div className="pause-box">
               <p className="pause-titel">Bewegungspause! 🤸</p>
               <p>{pause}</p>
-              <PausenTimer />
+              <PausenTimer onFertig={() => setPauseFertig(true)} />
             </div>
-            <div className="done-buttons">
-              {rundenErgebnis.schleifeNeu && naechsteOffeneStation && naechsteOffeneStation.id !== station.id ? (
-                <button className="btn-primary" onClick={() => startRound(naechsteOffeneStation)}>
-                  Nächste Station {naechsteOffeneStation.emoji}
+            {pauseFertig && (
+              <div className="done-buttons">
+                {rundenErgebnis.schleifeNeu && naechsteOffeneStation && naechsteOffeneStation.id !== station.id ? (
+                  <button className="btn-primary" onClick={() => startRound(naechsteOffeneStation)}>
+                    Nächste Station {naechsteOffeneStation.emoji}
+                  </button>
+                ) : (
+                  <button className="btn-primary" onClick={() => startRound(station)}>
+                    Nochmal {station.emoji}
+                  </button>
+                )}
+                <button className="btn-secondary" onClick={() => setScreen("home")}>
+                  Zum Pfad <span className="weiss">🐴</span>
                 </button>
-              ) : (
-                <button className="btn-primary" onClick={() => startRound(station)}>
-                  Nochmal {station.emoji}
-                </button>
-              )}
-              <button className="btn-secondary" onClick={() => setScreen("home")}>
-                Zum Pfad <span className="weiss">🐴</span>
-              </button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1570,21 +1572,8 @@ const css = `
 .pause-titel { font-family: 'Baloo 2', cursive; font-size: 20px; margin: 0 0 4px; }
 
 /* --- Pausen-Timer --- */
-.btn-timer {
-  margin-top: 10px; width: 100%;
-  background: ${PALETTE.sun}; border: none; border-radius: 999px;
-  font-family: 'Baloo 2', cursive; font-size: 18px; padding: 12px;
-  cursor: pointer; box-shadow: 0 4px 0 #D9AF2B; color: ${PALETTE.ink};
-}
-.btn-timer:active { transform: translateY(3px); box-shadow: none; }
-.btn-timer-klein {
-  margin-top: 4px;
-  background: transparent; border: 2px solid ${PALETTE.soft};
-  border-radius: 999px; padding: 6px 14px;
-  font-family: inherit; font-weight: 800; font-size: 13px;
-  color: ${PALETTE.soft}; cursor: pointer;
-}
 .timer { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 10px; }
+.pause-hinweis { font-size: 13px; color: ${PALETTE.soft}; margin: 0; }
 .timer-zeit {
   font-family: 'Baloo 2', cursive; font-size: 44px; line-height: 1;
   font-variant-numeric: tabular-nums;
