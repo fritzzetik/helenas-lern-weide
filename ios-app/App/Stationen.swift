@@ -16,7 +16,7 @@ import MatheWeide
 
 /// Eine Aufgabe, wie die Runde sie braucht: Frage plus 1 oder 2
 /// Eingabefelder (z. B. Ergebnis + Rest) und Metadaten für Bruno.
-struct AppAufgabe {
+struct AppAufgabe: Sendable {
     let frage: String
     let felder: [Feld]              // 1 oder 2 Eingaben
     let thema: String

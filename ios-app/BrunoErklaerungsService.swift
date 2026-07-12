@@ -15,13 +15,15 @@ import FoundationModels
 
 // MARK: - Datenmodelle
 
-struct BrunoAufgabe {
+struct BrunoAufgabe: Sendable {
     let frage: String          // "47 : 5 = ?  Rest ?"
     let antwortText: String    // "9, Rest 2"
     let thema: String          // "Division mit Rest"
     let hinweis: String        // regelbasierter Tipp aus dem Generator
     let gangart: Int           // 0 = Schritt, 1 = Trab, 2 = Galopp
-    let neueAehnlicheAufgabe: (_ gangart: Int) -> BrunoAufgabe
+    // @Sendable, weil die Aufgabe die Isolationsgrenze zum LLM-Formulierer
+    // überquert (Swift-6-Datenrennen-Prüfung im Release-Build).
+    let neueAehnlicheAufgabe: @Sendable (_ gangart: Int) -> BrunoAufgabe
 }
 
 struct BrunoAntwort {
