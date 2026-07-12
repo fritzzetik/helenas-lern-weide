@@ -262,7 +262,7 @@ function genSach3(level) {
   }
   return pick([
     () => { const proTag = rand(4, 7); const vorrat = proTag * 7 + rand(3, 9); return mach(`Im Sackerl sind ${vorrat} Karotten. Daisy frisst jeden Tag ${proTag} Karotten. Wie viele Karotten sind nach einer Woche noch im Sackerl?`, vorrat - proTag * 7, "Zwei-Schritt-Sachaufgaben", `Rechne zuerst ${proTag} · 7, dann zieh das von ${vorrat} ab.`); },
-    () => { const preis1 = rand(2, 4) * 100; const preis2 = pick([50, 100, 150]); return mach(`Eine Bürste für Daisy kostet ${preis1} c, ein Ball für Bruno ${preis2} c. Du zahlst mit 5 €. Wie viel Cent bekommst du zurück?`, 500 - preis1 - preis2, "Zwei-Schritt-Sachaufgaben mit Geld", "Zähl zuerst beide Preise zusammen. 5 € sind 500 c."); },
+    () => { const preis1 = rand(2, 3) * 100; const preis2 = pick([50, 100, 150]); return mach(`Eine Bürste für Daisy kostet ${preis1} c, ein Ball für Bruno ${preis2} c. Du zahlst mit 5 €. Wie viel Cent bekommst du zurück?`, 500 - preis1 - preis2, "Zwei-Schritt-Sachaufgaben mit Geld", "Zähl zuerst beide Preise zusammen. 5 € sind 500 c."); },
     () => { const runde = rand(150, 300); return mach(`Eine Runde um die Koppel ist ${runde} m lang. Daisy galoppiert 3 Runden. Wie viele Meter sind das?`, runde * 3, "Zwei-Schritt-Sachaufgaben", `Rechne ${runde} · 3.`); },
   ])();
 }
