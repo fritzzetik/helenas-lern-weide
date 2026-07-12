@@ -39,10 +39,11 @@ jobs:
         working-directory: web-prototype
         run: npm run build
 
+      # Voraussetzung: Pages ist in den Repo-Einstellungen aktiviert
+      # (Settings → Pages → Source: GitHub Actions). Das GITHUB_TOKEN
+      # darf die Site nicht selbst anlegen ("Resource not accessible").
       - name: Pages konfigurieren
         uses: actions/configure-pages@v5
-        with:
-          enablement: true   # aktiviert Pages beim ersten Lauf automatisch
 
       - name: Build-Artefakt hochladen
         uses: actions/upload-pages-artifact@v3
