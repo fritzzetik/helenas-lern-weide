@@ -15,18 +15,18 @@ import FoundationModels
 
 // MARK: - Datenmodelle
 
-struct MatheAufgabe {
+struct BrunoAufgabe {
     let frage: String          // "47 : 5 = ?  Rest ?"
     let antwortText: String    // "9, Rest 2"
     let thema: String          // "Division mit Rest"
     let hinweis: String        // regelbasierter Tipp aus dem Generator
     let gangart: Int           // 0 = Schritt, 1 = Trab, 2 = Galopp
-    let neueAehnlicheAufgabe: (_ gangart: Int) -> MatheAufgabe
+    let neueAehnlicheAufgabe: (_ gangart: Int) -> BrunoAufgabe
 }
 
 struct BrunoAntwort {
     let erklaerung: String
-    let quercheck: MatheAufgabe    // vom Generator erzeugt, NICHT vom LLM
+    let quercheck: BrunoAufgabe    // vom Generator erzeugt, NICHT vom LLM
     let quelle: Quelle
 
     enum Quelle: Equatable { case onDeviceLLM, regelbasiert }
@@ -41,7 +41,7 @@ enum Fehlerbild: String, CaseIterable {
     case einheitNichtUmgerechnet  = "hat die Einheit nicht umgerechnet, sondern die Zahl übernommen"
     case unbekannt                = "unbekanntes Fehlerbild"
 
-    static func analysiere(richtig: Int, eingabe: Int, aufgabe: MatheAufgabe) -> Fehlerbild {
+    static func analysiere(richtig: Int, eingabe: Int, aufgabe: BrunoAufgabe) -> Fehlerbild {
         if abs(richtig - eingabe) == 1 { return .umEinsDaneben }
         if eingabe == richtig * 10 || eingabe * 10 == richtig
             || eingabe == richtig * 100 || eingabe * 100 == richtig {
@@ -77,7 +77,7 @@ struct BrunoText {
 
 protocol TextFormulierer: Sendable {
     func formuliere(
-        aufgabe: MatheAufgabe,
+        aufgabe: BrunoAufgabe,
         falscheEingabe: Int,
         fehlerbild: Fehlerbild
     ) async throws -> String
@@ -95,7 +95,7 @@ struct LLMFormulierer: TextFormulierer {
         """
 
     func formuliere(
-        aufgabe: MatheAufgabe,
+        aufgabe: BrunoAufgabe,
         falscheEingabe: Int,
         fehlerbild: Fehlerbild
     ) async throws -> String {
@@ -139,7 +139,7 @@ final class BrunoErklaerungsService {
     }
 
     func erklaere(
-        aufgabe: MatheAufgabe,
+        aufgabe: BrunoAufgabe,
         falscheEingabe: Int,
         richtigeAntwort: Int,
         llmErlaubt: Bool? = nil          // Tests können erzwingen
@@ -172,7 +172,7 @@ final class BrunoErklaerungsService {
 
     // MARK: Regelbasierter Fallback (statisch → direkt testbar)
 
-    static func fallbackErklaerung(aufgabe: MatheAufgabe, fehlerbild: Fehlerbild) -> String {
+    static func fallbackErklaerung(aufgabe: BrunoAufgabe, fehlerbild: Fehlerbild) -> String {
         let einstieg: String
         switch fehlerbild {
         case .umEinsDaneben:

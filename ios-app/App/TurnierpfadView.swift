@@ -2,29 +2,36 @@
 //  TurnierpfadView.swift
 //  Helenas Lern-Weide 🐶🐴
 //
-//  Der Turnierpfad: Stationen in Lehrplan-Reihenfolge. Nur die aktuelle
-//  ist offen 🔓, geschaffte 🎀 bleiben als Freies Training offen,
-//  kommende sind sichtbar aber gesperrt 🔒. ADHS-freundlich: klare
-//  Struktur, sichtbarer Fortschritt, kein "Durchgefallen".
+//  Der Turnierpfad: Stationen in Lehrplan-Reihenfolge (aus dem Package,
+//  identisch zum React-Prototyp). Nur die aktuelle ist offen 🔓,
+//  geschaffte 🎀 bleiben als Freies Training offen, kommende sind
+//  sichtbar aber gesperrt 🔒. Läuft noch eine Bewegungspause, führt
+//  jeder Stationsstart zuerst in die Warteschleife.
 //
 
 import SwiftUI
 import SwiftData
+import LernWeideCore
+import MatheWeide
 
 struct TurnierpfadView: View {
     @Environment(\.modelContext) private var context
     @Query private var fortschritte: [StationsFortschritt]
+    @Query private var profile: [Profil]
 
-    @State private var aktiveStation: Station?
+    @State private var aktiveStation: MatheStation?
+    @State private var zeigePause = false
 
     private var service: FortschrittsService { FortschrittsService(context: context) }
+    private var klasse: String { profile.first?.klasse ?? "klasse3" }
+    private var pfad: Turnierpfad<MatheStation> { Pfade.pfad(fuer: klasse) }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
                     kopf
-                    ForEach(Turnierpfad.klasse3) { station in
+                    ForEach(pfad.stationen) { station in
                         stationsKarte(station)
                     }
                 }
@@ -32,19 +39,33 @@ struct TurnierpfadView: View {
             }
             .background(Color(red: 1.0, green: 0.976, blue: 0.925))   // cream
             .navigationTitle("Helenas Lern-Weide")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button("3. Klasse 🏠") { service.setzeKlasse("klasse3") }
+                        Button("4. Klasse 🏇") { service.setzeKlasse("klasse4") }
+                    } label: {
+                        Text(klasse == "klasse4" ? "4. Klasse" : "3. Klasse")
+                    }
+                }
+            }
             .fullScreenCover(item: $aktiveStation) { station in
-                RundenView(station: station)
+                RundenView(station: station, pfad: pfad)
+            }
+            .fullScreenCover(isPresented: $zeigePause) {
+                BewegungspauseView()
             }
         }
     }
 
     private var kopf: some View {
-        let schleifen = fortschritte.filter(\.schleife).count
+        let ids = pfad.stationen.map(\.rawValue)
+        let schleifen = fortschritte.filter { $0.schleife && ids.contains($0.stationID) }.count
         return HStack {
             Text("🐶").font(.system(size: 44))
             VStack(alignment: .leading) {
                 Text("Hallo \(service.profil().name)!").font(.title2.bold())
-                Text("Schleifen: \(schleifen) von \(Turnierpfad.klasse3.count) 🎀")
+                Text("Schleifen: \(schleifen) von \(pfad.stationen.count) 🎀")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
             Spacer()
@@ -55,17 +76,24 @@ struct TurnierpfadView: View {
     }
 
     @ViewBuilder
-    private func stationsKarte(_ station: Station) -> some View {
-        let status = service.status(stationID: station.id, inReihenfolge: Turnierpfad.alleIDs)
+    private func stationsKarte(_ station: MatheStation) -> some View {
+        let status = service.status(stationID: station.rawValue,
+                                    inReihenfolge: pfad.stationen.map(\.rawValue))
 
         Button {
-            if status != .gesperrt { aktiveStation = station }
+            guard status != .gesperrt else { return }
+            // Bewegungspause ist Pflicht – erst fertig hüpfen, dann rechnen.
+            if PausenWaechter.laeuft {
+                zeigePause = true
+            } else {
+                aktiveStation = station
+            }
         } label: {
             HStack(spacing: 14) {
                 Text(station.emoji).font(.system(size: 34))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(station.titel).font(.headline).multilineTextAlignment(.leading)
-                    Text(status == .geschafft ? "Freies Training" : station.sub)
+                    Text(status == .geschafft ? "Freies Training" : station.untertitel)
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -83,9 +111,4 @@ struct TurnierpfadView: View {
         .foregroundStyle(Color(red: 0.2, green: 0.16, blue: 0.12))
         .disabled(status == .gesperrt)
     }
-}
-
-extension Station: Hashable {
-    static func == (lhs: Station, rhs: Station) -> Bool { lhs.id == rhs.id }
-    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }

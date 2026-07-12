@@ -1,26 +1,29 @@
-# iOS-App-Schicht (wartet auf den Mac)
+# iOS-App-Schicht
 
 Diese Dateien gehören zur nativen iOS-App und werden **bewusst nicht** vom Swift Package
 (`Package.swift`) kompiliert – sie brauchen iOS-26-Frameworks (Foundation Models, SwiftData
-mit CloudKit), die erst im Xcode-Projekt am Mac sinnvoll eingebunden werden. So bleibt die
-CI auf GitHub grün, und nichts geht verloren.
+mit CloudKit). Das Xcode-Projekt entsteht aus `project.yml` per **XcodeGen**
+(`xcodegen generate` – lokal am Mac genauso wie auf dem CI-Runner).
 
 | Datei | Inhalt |
 |---|---|
-| `BrunoErklaerungsService.swift` | Bruno-Erklärungen via Apple Foundation Models (on-device), LLM hinter `TextFormulierer`-Protokoll (mockbar), regelbasierte Fehleranalyse + Fallback. Prinzip: **Code rechnet, LLM formuliert nur.** |
-| `BrunoErklaerungsTests.swift` | Swift-Testing-Suite: parametrisierte Fehlerbild-Tests, Mock-Injection, Textqualitäts-Prüfer mit Ziffern-Check (fängt erfundene Zahlen), Live-LLM-Tests mit Latenz-Wächter (überspringen sich ohne Apple Intelligence selbst) |
-| `MatheWeideDaten.swift` | SwiftData-Modelle (`Profil`, `StationsFortschritt`) + `FortschrittsService` mit Freischalt-Logik und CloudKit-Duplikat-Bereinigung. iCloud-Sync kommt später ohne Code-Änderung dazu. |
+| `App/LernWeideApp.swift` | App-Einstieg, SwiftData-Container (CloudKit-Sync kommt später per Capability dazu) |
+| `App/TurnierpfadView.swift` | Turnierpfad mit Freischaltung (🔓/🎀/🔒), Klassen-Umschalter, Pausen-Gate |
+| `App/RundenView.swift` | Runde mit Numpad, Zweitversuch, Bruno-Erklärung + Quercheck, Ergebnis mit verpflichtender Bewegungspause |
+| `App/Stationen.swift` | Dünne Brücke zum Package: `AppAufgabe` (1–2 Eingabefelder), Pfad-Auswahl, `PausenWaechter` (UserDefaults-Zeitstempel) |
+| `BrunoErklaerungsService.swift` | Bruno-Erklärungen via Apple Foundation Models (on-device), LLM hinter `TextFormulierer`-Protokoll (mockbar), regelbasierte Fehleranalyse + Fallback. Modell heißt `BrunoAufgabe`. Prinzip: **Code rechnet, LLM formuliert nur.** |
+| `BrunoErklaerungsTests.swift` | Swift-Testing-Suite für den Bruno-Service (nicht im App-Target; kommt am Mac in ein Test-Target) |
+| `MatheWeideDaten.swift` | SwiftData-Modelle (`Profil`, `StationsFortschritt`) + `FortschrittsService` mit Freischalt-Logik und CloudKit-Duplikat-Bereinigung |
 
-## Einbindung am Mac (Fahrplan)
+## Architektur-Regel
 
-1. Xcode 26 → Neues Projekt → iOS App → SwiftUI, „Include Tests" (Swift Testing) anhaken
-2. Diese drei Dateien ins Projekt ziehen: Service + Daten ins App-Target,
-   `BrunoErklaerungsTests.swift` ins Test-Target (dort `@testable import` an den
-   Modulnamen anpassen – siehe Kommentar in der Datei)
-3. Die Aufgaben-Logik kommt als lokales Package dazu:
-   File → Add Package Dependencies → „Add Local…" → dieses Repo-Verzeichnis
-   → Produkte `LernWeideCore` und `MatheWeide` einbinden
-4. Minimum Deployment iOS 26 (oder iOS 17 + `#available`-Checks für den Regel-Fallback)
+**Alle Spiellogik kommt aus dem Package** (`LernWeideCore` + `MatheWeide`): Generatoren,
+`Runde` (Sterne/Schleife), `GangartTracker`, `Turnierpfad`, `AufgabenPlaner`
+(Wiederholungs-Mix), `Bewegungspause`. Die App-Schicht rendert nur und persistiert.
+Hier werden **keine Aufgaben neu erfunden** – sonst driften Web-Prototyp und App auseinander.
 
-Hinweis: Sowohl `BrunoErklaerungsTests.swift` als auch die Package-Tests definieren einen
-Tag `liveLLM` – das ist okay, solange sie in getrennten Test-Targets bleiben (tun sie).
+## CI ohne Mac
+
+- `.github/workflows/ios-build.yml` – Simulator-Build-Check bei jedem Push (ohne Signing)
+- `.github/workflows/testflight.yml` – manueller TestFlight-Upload mit Cloud Signing
+  (App-Store-Connect-API-Key in den GitHub Secrets)

@@ -6,7 +6,10 @@
 import Foundation
 import LernWeideCore
 
-public enum MatheStation: String, CaseIterable, Sendable {
+public enum MatheStation: String, CaseIterable, Sendable, Identifiable {
+    /// Die Prototyp-ID – auch für SwiftUI-Listen (Identifiable).
+    public var id: String { rawValue }
+
     // 3. Klasse (Lehrplan-Reihenfolge)
     case aufwaermenBis100 = "s3_warm"
     case zahlenraum1000 = "s3_zr"

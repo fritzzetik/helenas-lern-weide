@@ -35,8 +35,8 @@ enum Fixture {
         thema: String = "Division mit Rest",
         hinweis: String = "Such die größte Zahl der 5er-Reihe, die noch in 47 passt.",
         gangart: Int = 1
-    ) -> MatheAufgabe {
-        MatheAufgabe(
+    ) -> BrunoAufgabe {
+        BrunoAufgabe(
             frage: frage,
             antwortText: antwortText,
             thema: thema,
@@ -119,7 +119,7 @@ struct MockFormulierer: TextFormulierer {
 
     struct MockFehler: Error {}
 
-    func formuliere(aufgabe: MatheAufgabe, falscheEingabe: Int, fehlerbild: Fehlerbild) async throws -> String {
+    func formuliere(aufgabe: BrunoAufgabe, falscheEingabe: Int, fehlerbild: Fehlerbild) async throws -> String {
         if wirftFehler { throw MockFehler() }
         return text
     }
@@ -214,7 +214,7 @@ enum TextQualitaet {
     /// Ziffern-Check: Jede mehrstellige Zahl in der Erklärung muss aus dem
     /// Prompt-Kontext stammen (Aufgabe, Antwort, Eingabe, Hinweis).
     /// So fliegt jede „erfundene Rechnung“ des Modells automatisch auf.
-    static func alleZahlenBekannt(text: String, aufgabe: MatheAufgabe, eingabe: Int) -> Bool {
+    static func alleZahlenBekannt(text: String, aufgabe: BrunoAufgabe, eingabe: Int) -> Bool {
         let kontext = "\(aufgabe.frage) \(aufgabe.antwortText) \(aufgabe.hinweis) \(eingabe)"
         let erlaubt = Set(zahlen(in: kontext))
         // Einstellige Zahlen (1–10) sind als Füllwörter ok („zwei Nullen“ etc.)
@@ -229,7 +229,7 @@ enum TextQualitaet {
     }
 
     /// Der Gesamt-Check – wirft aussagekräftige #expect-Fehler.
-    static func pruefe(_ text: String, aufgabe: MatheAufgabe, eingabe: Int) {
+    static func pruefe(_ text: String, aufgabe: BrunoAufgabe, eingabe: Int) {
         #expect(!text.isEmpty, "Erklärung ist leer")
         #expect(satzAnzahl(text) <= 4, "Zu lang (\(satzAnzahl(text)) Sätze): \(text)")
         for wort in verboteneWoerter {
@@ -278,7 +278,7 @@ extension Tag {
 struct LiveLLMTests {
 
     /// Typische Fehlerfälle quer durch beide Ställe.
-    static let faelle: [(MatheAufgabe, eingabe: Int, richtig: Int)] = [
+    static let faelle: [(BrunoAufgabe, eingabe: Int, richtig: Int)] = [
         (Fixture.aufgabe(), 8, 9),                                    // Division mit Rest
         (Fixture.umwandlung, 3, 300),                                 // Einheit vergessen
         (Fixture.plusMinus, 62, 632),                                 // Rechenrichtung

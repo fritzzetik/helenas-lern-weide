@@ -2,36 +2,46 @@
 //  RundenView.swift
 //  Helenas Lern-Weide 🐶🐴
 //
-//  Eine Runde = 5 Aufgaben. ADHS-freundlich: eine Aufgabe pro Bildschirm,
-//  großes Numpad, sofortiges Lob, adaptive Gangart (GangartTracker aus dem
-//  getesteten Package). Bei Fehlern erklärt Bruno (On-Device-LLM, sonst
-//  regelbasierter Fallback – lautlos). Danach: Sterne, evtl. Schleife 🎀,
-//  und auf Wunsch die 3-Minuten-Bewegungspause.
+//  Eine Runde = 5 Aufgaben, Ablauf identisch zum React-Prototyp:
+//  1. Versuch richtig → Stern (Tempo-Beweis). 2. Versuch richtig → Stern.
+//  Sonst erklärt Bruno (On-Device-LLM, lautloser Fallback) und es folgt
+//  ein Quercheck – eine Gangart gemütlicher; richtig → Stern.
+//  Die Spielregeln (Sterne, Gangart, Schleife) kommen aus `Runde` im
+//  getesteten Package. Danach: verpflichtende 3-Minuten-Bewegungspause –
+//  „Zurück zur Weide" erscheint erst, wenn sie vorbei ist.
 //
 
 import SwiftUI
 import SwiftData
 import LernWeideCore
+import MatheWeide
 
-private let RUNDEN_LAENGE = 5
-private let SCHLEIFE_MIN_STERNE = 4
+private let gruen = Color(red: 0.482, green: 0.714, blue: 0.384)
+private let himmelblau = Color(red: 0.741, green: 0.890, blue: 0.941)
 
 struct RundenView: View {
-    let station: Station
+    let station: MatheStation
+    let pfad: Turnierpfad<MatheStation>
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
-    @State private var tracker = GangartTracker()
+    private enum Phase { case frage, nochmal, quercheck }
+
+    @State private var runde = Runde()
+    @State private var phase: Phase = .frage
     @State private var aufgabe: AppAufgabe?
-    @State private var aufgabeNr = 1
+    @State private var wiederholungVon: MatheStation?
     @State private var feldIndex = 0
     @State private var eingaben: [String] = []
-    @State private var sterne = 0
     @State private var lob: String?
+    @State private var mutmacher: String?
     @State private var brunoText: String?
     @State private var fertig = false
-    @State private var pause = false
+
+    // Kontext für den Wiederholungs-Mix (einmal beim Start geladen).
+    @State private var geschafft: Set<MatheStation> = []
+    @State private var gangarten: [MatheStation: Gangart] = [:]
 
     private let brunoService = BrunoErklaerungsService()
 
@@ -42,22 +52,22 @@ struct RundenView: View {
                 else if let a = aufgabe { aufgabenBildschirm(a) }
                 else { ProgressView() }
             }
-            .navigationTitle("\(station.emoji) \(tracker.gangart.anzeigename)")
+            .navigationTitle("\(station.emoji) \(runde.gangart.anzeigename)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Zur Weide") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Text("\(min(aufgabeNr, RUNDEN_LAENGE)) / \(RUNDEN_LAENGE)").monospacedDigit()
+                    Text("\(min(runde.position + 1, Runde.aufgabenProRunde)) / \(Runde.aufgabenProRunde)")
+                        .monospacedDigit()
                 }
             }
         }
-        .onAppear { naechsteAufgabe(); brunoService.aufwaermen() }
+        .onAppear(perform: starten)
         .sheet(item: $brunoText) { text in
             brunoSheet(text)
         }
-        .fullScreenCover(isPresented: $pause) { BewegungspauseView() }
     }
 
     // MARK: Aufgabe
@@ -66,6 +76,14 @@ struct RundenView: View {
     private func aufgabenBildschirm(_ a: AppAufgabe) -> some View {
         VStack(spacing: 20) {
             Spacer()
+
+            if let w = wiederholungVon, phase == .frage {
+                Text("Wiederholung: \(w.titel)")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(himmelblau, in: Capsule())
+            }
+
             Text(a.frage)
                 .font(.system(size: 32, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
@@ -85,7 +103,8 @@ struct RundenView: View {
                 }
             }
 
-            if let lob { Text(lob).font(.title3.bold()).transition(.scale) }
+            if let mutmacher { Text(mutmacher).font(.headline).foregroundStyle(.orange).multilineTextAlignment(.center).padding(.horizontal) }
+            if let lob { Text(lob).font(.title3.bold()).multilineTextAlignment(.center).padding(.horizontal).transition(.scale) }
 
             Spacer()
             numpad
@@ -113,7 +132,7 @@ struct RundenView: View {
             Text(label)
                 .font(.system(size: 28, weight: .bold, design: .rounded))
                 .frame(maxWidth: .infinity, minHeight: 62)
-                .background(betont ? Color(red: 0.482, green: 0.714, blue: 0.384) : Color.gray.opacity(0.15),
+                .background(betont ? gruen : Color.gray.opacity(0.15),
                             in: RoundedRectangle(cornerRadius: 14))
                 .foregroundStyle(betont ? .white : .primary)
         }
@@ -126,12 +145,36 @@ struct RundenView: View {
 
     // MARK: Logik
 
+    private func starten() {
+        let service = FortschrittsService(context: context)
+        let ids = pfad.stationen.map(\.rawValue)
+        geschafft = Set(service.geschaffteStationen(inReihenfolge: ids)
+            .compactMap(MatheStation.init(rawValue:)))
+        gangarten = Dictionary(uniqueKeysWithValues: pfad.stationen.map {
+            ($0, Gangart(rawValue: service.fortschritt(fuer: $0.rawValue).gangart) ?? .schritt)
+        })
+        runde = Runde(gangart: gangarten[station] ?? .schritt)
+        brunoService.aufwaermen()
+        naechsteAufgabe()
+    }
+
     private func naechsteAufgabe() {
-        let a = station.generator(tracker.gangart)
+        var rng = SystemRandomNumberGenerator()
+        let geplant = AufgabenPlaner.aufgabe(
+            fuer: station, position: runde.position, gangart: runde.gangart,
+            pfad: pfad, geschafft: geschafft, gangarten: gangarten, using: &rng
+        )
+        wiederholungVon = geplant.wiederholungVon
+        zeige(AppAufgabe(geplant.aufgabe), phase: .frage)
+    }
+
+    private func zeige(_ a: AppAufgabe, phase neuePhase: Phase) {
         aufgabe = a
+        phase = neuePhase
         eingaben = Array(repeating: "", count: a.felder.count)
         feldIndex = 0
         lob = nil
+        if neuePhase == .frage { mutmacher = nil }
     }
 
     private func pruefe() {
@@ -144,43 +187,70 @@ struct RundenView: View {
         guard eingaben.allSatisfy({ !$0.isEmpty }) else { return }
 
         let richtig = zip(eingaben, a.felder).allSatisfy { Int($0) == $1.antwort }
-        if richtig {
-            sterne += 1
+
+        switch (phase, richtig) {
+        case (.frage, true):
+            beende(mit: .erstversuch)
+        case (.frage, false):
+            // Zweite Chance – wie im Prototyp.
+            zeige(a, phase: .nochmal)
+            mutmacher = "Fast! Probier's gleich noch einmal. 💪"
+        case (.nochmal, true), (.quercheck, true):
+            beende(mit: .zweitversuch)
+        case (.nochmal, false):
+            brunoErklaert(a)
+        case (.quercheck, false):
+            lob = "Knapp daneben – die Antwort war \(a.antwortText). Das üben wir einfach nochmal, kein Stress!"
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) { beende(mit: .erklaert) }
+        }
+    }
+
+    /// Verbucht das Ergebnis in der Runde (Stern + Gangart) und geht weiter.
+    private func beende(mit ergebnis: AntwortErgebnis) {
+        if ergebnis.verdientStern {
             lob = ["Super! ⭐️", "Toll gemacht! 🐴", "Bruno bellt vor Freude! 🐶", "Genau richtig! 🎉"].randomElement()
-            tracker.verarbeite(richtig: true)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { weiter() }
-        } else {
-            tracker.verarbeite(richtig: false)
-            let gangartVorher = tracker.gangart
-            let eingabe = Int(eingaben[0]) ?? 0
-            let mA = a.alsMatheAufgabe(gangart: gangartVorher, generator: station.generator)
-            Task { @MainActor in
-                let antwort = await brunoService.erklaere(
-                    aufgabe: mA, falscheEingabe: eingabe, richtigeAntwort: a.felder[0].antwort
-                )
-                brunoText = "Richtig wäre: \(a.antwortText)\n\n\(antwort.erklaerung)"
+        }
+        runde.verarbeite(ergebnis)
+        let wartezeit = ergebnis.verdientStern ? 0.9 : 0.1
+        DispatchQueue.main.asyncAfter(deadline: .now() + wartezeit) {
+            if runde.istFertig {
+                rundeSpeichern()
+                fertig = true
+            } else {
+                naechsteAufgabe()
             }
         }
     }
 
-    private func weiter() {
-        if aufgabeNr >= RUNDEN_LAENGE {
-            rundeSpeichern()
-            fertig = true
-        } else {
-            aufgabeNr += 1
-            naechsteAufgabe()
+    private func brunoErklaert(_ a: AppAufgabe) {
+        mutmacher = nil
+        let eingabe = Int(eingaben[0]) ?? 0
+        let quelle = wiederholungVon ?? station
+        let bruno = a.alsBrunoAufgabe(gangart: runde.gangart, station: quelle)
+        Task { @MainActor in
+            let antwort = await brunoService.erklaere(
+                aufgabe: bruno, falscheEingabe: eingabe, richtigeAntwort: a.felder[0].antwort
+            )
+            brunoText = "Richtig wäre: \(a.antwortText)\n\n\(antwort.erklaerung)"
         }
     }
 
+    /// Nach Brunos Erklärung: ähnliche Aufgabe, eine Gangart gemütlicher.
+    private func quercheckStarten() {
+        let quelle = wiederholungVon ?? station
+        zeige(quelle.appAufgabe(gangart: runde.gangart.langsamer), phase: .quercheck)
+        mutmacher = "Quercheck: Zeig Bruno, dass du's kannst! 🐾"
+    }
+
     private func rundeSpeichern() {
-        let schleife = sterne >= SCHLEIFE_MIN_STERNE && tracker.gangart >= .trab
         FortschrittsService(context: context).rundeBeendet(
-            stationID: station.id,
-            sterne: sterne,
-            gangart: tracker.gangart.rawValue,
-            schleifeGewonnen: schleife
+            stationID: station.rawValue,
+            sterne: runde.sterne,
+            gangart: runde.gangart.rawValue,
+            schleifeGewonnen: runde.schleifeVerdient
         )
+        // Bewegungspause ist Pflicht – ab jetzt läuft die Uhr (übersteht Neustart).
+        PausenWaechter.starten()
     }
 
     // MARK: Bruno-Sheet
@@ -192,11 +262,11 @@ struct RundenView: View {
             Text(text).font(.title3).multilineTextAlignment(.center).padding(.horizontal)
             Button {
                 brunoText = nil
-                weiter()
+                quercheckStarten()
             } label: {
-                Text("Alles klar, weiter!")
+                Text("Alles klar – ich zeig's dir!")
                     .font(.headline).frame(maxWidth: .infinity, minHeight: 52)
-                    .background(Color(red: 0.482, green: 0.714, blue: 0.384), in: RoundedRectangle(cornerRadius: 14))
+                    .background(gruen, in: RoundedRectangle(cornerRadius: 14))
                     .foregroundStyle(.white)
             }
             .padding(.horizontal)
@@ -206,36 +276,53 @@ struct RundenView: View {
         .interactiveDismissDisabled()
     }
 
-    // MARK: Ergebnis
+    // MARK: Ergebnis (mit Pausen-Pflicht)
 
     private var ergebnis: some View {
-        let schleife = sterne >= SCHLEIFE_MIN_STERNE && tracker.gangart >= .trab
-        return VStack(spacing: 22) {
-            Spacer()
-            Text(schleife ? "🎀" : "🐴").font(.system(size: 90))
-            Text(schleife ? "Schleife gewonnen!" : "Gute Trainingsrunde!")
-                .font(.largeTitle.bold())
-            Text(String(repeating: "⭐️", count: sterne) + String(repeating: "☆", count: RUNDEN_LAENGE - sterne))
-                .font(.title)
-            if !schleife {
-                Text("Für die Schleife: mindestens \(SCHLEIFE_MIN_STERNE) Sterne im Trab oder Galopp. Du schaffst das!")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center).padding(.horizontal)
+        TimelineView(.periodic(from: .now, by: 1)) { _ in
+            let rest = PausenWaechter.restSekunden
+            let schleife = runde.schleifeVerdient
+            VStack(spacing: 22) {
+                Spacer()
+                Text(schleife ? "🎀" : "🐴").font(.system(size: 90))
+                Text(schleife ? "Schleife gewonnen!" : "Gute Trainingsrunde!")
+                    .font(.largeTitle.bold())
+                Text(String(repeating: "⭐️", count: runde.sterne)
+                     + String(repeating: "☆", count: Runde.aufgabenProRunde - runde.sterne))
+                    .font(.title)
+                if !schleife {
+                    Text("Für die Schleife: mindestens \(Runde.schleifeMinSterne) Sterne im Trab oder Galopp. Du schaffst das!")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center).padding(.horizontal)
+                }
+                Spacer()
+                if rest > 0 {
+                    VStack(spacing: 10) {
+                        Text("Bewegungspause! 🤸").font(.headline)
+                        Text("Hüpf, tanz oder galoppier wie Daisy!")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                        Text(String(format: "%d:%02d", rest / 60, rest % 60))
+                            .font(.system(size: 44, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                        ProgressView(value: Double(Bewegungspause.dauerSekunden - rest),
+                                     total: Double(Bewegungspause.dauerSekunden))
+                            .tint(gruen)
+                        Text("Wenn Daisy fertig ist, geht's weiter!")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    .padding()
+                    .background(Color(red: 1.0, green: 0.945, blue: 0.863), in: RoundedRectangle(cornerRadius: 20))
+                } else {
+                    Button { dismiss() } label: {
+                        Text("Zurück zur Weide")
+                            .font(.headline).frame(maxWidth: .infinity, minHeight: 52)
+                            .background(gruen, in: RoundedRectangle(cornerRadius: 14))
+                            .foregroundStyle(.white)
+                    }
+                }
             }
-            Spacer()
-            Button { pause = true } label: {
-                Label("3 Minuten hüpfen mit Daisy", systemImage: "figure.jumprope")
-                    .font(.headline).frame(maxWidth: .infinity, minHeight: 52)
-                    .background(Color(red: 0.741, green: 0.890, blue: 0.941), in: RoundedRectangle(cornerRadius: 14))
-            }
-            Button { dismiss() } label: {
-                Text("Zurück zur Weide")
-                    .font(.headline).frame(maxWidth: .infinity, minHeight: 52)
-                    .background(Color(red: 0.482, green: 0.714, blue: 0.384), in: RoundedRectangle(cornerRadius: 14))
-                    .foregroundStyle(.white)
-            }
+            .padding()
         }
-        .padding()
     }
 }
 
@@ -244,38 +331,47 @@ extension String: @retroactive Identifiable {
     public var id: String { self }
 }
 
-// MARK: - Bewegungspause
+// MARK: - Bewegungspause (Warteschleife auf dem Pfad)
 
+/// Wird gezeigt, wenn während einer laufenden Pause eine Station gestartet
+/// wird – auch nach App-Neustart. Kein Überspringen: Der Weiter-Button
+/// erscheint erst, wenn die Pause vorbei ist. Die Restzeit kommt aus der
+/// echten Uhr (PausenWaechter), Hintergrund/Sperren ändern nichts.
 struct BewegungspauseView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var verbleibend = 180
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        VStack(spacing: 26) {
-            Spacer()
-            Text("🐴").font(.system(size: 80))
-            Text("Bewegungspause!").font(.largeTitle.bold())
-            Text("Hüpf, tanz oder galoppier wie Daisy!")
-                .font(.title3).foregroundStyle(.secondary)
+        TimelineView(.periodic(from: .now, by: 1)) { _ in
+            let rest = PausenWaechter.restSekunden
+            VStack(spacing: 26) {
+                Spacer()
+                Text(rest > 0 ? "🤸" : "🐴🎉").font(.system(size: 80))
+                Text(rest > 0 ? "Erst fertig hüpfen!" : "Pause vorbei!")
+                    .font(.largeTitle.bold())
+                Text(rest > 0 ? "Hüpf, tanz oder galoppier wie Daisy!"
+                              : "Daisy ruft dich zurück auf den Pfad!")
+                    .font(.title3).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center).padding(.horizontal)
 
-            Text(String(format: "%d:%02d", verbleibend / 60, verbleibend % 60))
-                .font(.system(size: 60, weight: .bold, design: .rounded))
-                .monospacedDigit()
+                if rest > 0 {
+                    Text(String(format: "%d:%02d", rest / 60, rest % 60))
+                        .font(.system(size: 60, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                    ProgressView(value: Double(Bewegungspause.dauerSekunden - rest),
+                                 total: Double(Bewegungspause.dauerSekunden))
+                        .tint(gruen)
+                        .padding(.horizontal, 40)
+                }
 
-            ProgressView(value: Double(180 - verbleibend), total: 180)
-                .tint(Color(red: 0.482, green: 0.714, blue: 0.384))
-                .padding(.horizontal, 40)
-
-            Spacer()
-            Button("Fertig!") { dismiss() }
-                .font(.headline).frame(maxWidth: .infinity, minHeight: 52)
-                .background(Color(red: 0.482, green: 0.714, blue: 0.384), in: RoundedRectangle(cornerRadius: 14))
-                .foregroundStyle(.white)
-                .padding()
-        }
-        .onReceive(timer) { _ in
-            if verbleibend > 0 { verbleibend -= 1 } else { dismiss() }
+                Spacer()
+                if rest <= 0 {
+                    Button("Weiter geht's! 🐾") { dismiss() }
+                        .font(.headline).frame(maxWidth: .infinity, minHeight: 52)
+                        .background(gruen, in: RoundedRectangle(cornerRadius: 14))
+                        .foregroundStyle(.white)
+                        .padding()
+                }
+            }
         }
     }
 }
