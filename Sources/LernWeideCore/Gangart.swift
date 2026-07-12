@@ -34,8 +34,9 @@ public enum Gangart: Int, CaseIterable, Comparable, Sendable {
     }
 }
 
-/// Verfolgt Antwort-Serien und passt die Gangart an.
-/// Standard: 3 richtige in Folge → schneller, 2 falsche in Folge → langsamer.
+/// Verfolgt Antwort-Serien und passt die Gangart an – Regeln wie im Prototyp:
+/// 2 Erstversuch-Treffer in Folge → schneller, 2 Fehler in Folge → langsamer.
+/// Ein Zweitversuch-Treffer ist kein Fehler, bricht aber die Tempo-Serie.
 public struct GangartTracker: Sendable {
     public private(set) var gangart: Gangart
     public private(set) var richtigSerie: Int = 0
@@ -46,7 +47,7 @@ public struct GangartTracker: Sendable {
 
     public init(
         start: Gangart = .schritt,
-        hochstufenNach: Int = 3,
+        hochstufenNach: Int = 2,
         runterstufenNach: Int = 2
     ) {
         self.gangart = start
@@ -54,25 +55,36 @@ public struct GangartTracker: Sendable {
         self.runterstufenNach = runterstufenNach
     }
 
-    /// Verarbeitet eine Antwort und liefert `true`, wenn sich die Gangart geändert hat.
+    /// Verarbeitet ein Ergebnis und liefert `true`, wenn sich die Gangart geändert hat.
     @discardableResult
-    public mutating func verarbeite(richtig: Bool) -> Bool {
+    public mutating func verarbeite(_ ergebnis: AntwortErgebnis) -> Bool {
         let vorher = gangart
-        if richtig {
+        switch ergebnis {
+        case .erstversuch:
             richtigSerie += 1
             falschSerie = 0
             if richtigSerie >= hochstufenNach {
                 gangart = gangart.schneller
                 richtigSerie = 0
             }
-        } else {
-            falschSerie += 1
+        case .zweitversuch:
+            // Geschafft, aber kein Tempo-Beweis: die Serie beginnt neu,
+            // die Fehler-Serie bleibt unberührt (wie im Prototyp).
             richtigSerie = 0
+        case .erklaert:
+            richtigSerie = 0
+            falschSerie += 1
             if falschSerie >= runterstufenNach {
                 gangart = gangart.langsamer
                 falschSerie = 0
             }
         }
         return gangart != vorher
+    }
+
+    /// Vereinfachte Sicht: `richtig` heißt „beim ersten Versuch richtig".
+    @discardableResult
+    public mutating func verarbeite(richtig: Bool) -> Bool {
+        verarbeite(richtig ? .erstversuch : .erklaert)
     }
 }

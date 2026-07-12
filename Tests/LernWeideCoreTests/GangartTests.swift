@@ -11,10 +11,9 @@ extension Tag {
 @Suite("Gangarten-Anpassung")
 struct GangartTests {
 
-    @Test("3 richtige Antworten in Folge stufen von Schritt auf Trab hoch")
+    @Test("2 Erstversuch-Treffer in Folge stufen von Schritt auf Trab hoch (wie im Prototyp)")
     func hochstufen() {
         var tracker = GangartTracker(start: .schritt)
-        tracker.verarbeite(richtig: true)
         tracker.verarbeite(richtig: true)
         let geaendert = tracker.verarbeite(richtig: true)
         #expect(geaendert)
@@ -48,13 +47,36 @@ struct GangartTests {
     func serienReset() {
         var tracker = GangartTracker(start: .schritt)
         tracker.verarbeite(richtig: true)
-        tracker.verarbeite(richtig: true)
         tracker.verarbeite(richtig: false)
         tracker.verarbeite(richtig: true)
-        tracker.verarbeite(richtig: true)
-        // Erst die dritte richtige NACH dem Fehler darf hochstufen
+        // Erst der zweite Treffer NACH dem Fehler darf hochstufen
         #expect(tracker.gangart == .schritt)
         tracker.verarbeite(richtig: true)
+        #expect(tracker.gangart == .trab)
+    }
+
+    @Test("Zweitversuch bricht die Tempo-Serie, zählt aber nicht als Fehler")
+    func zweitversuch() {
+        var tracker = GangartTracker(start: .trab)
+        tracker.verarbeite(.erstversuch)
+        tracker.verarbeite(.zweitversuch) // Serie bricht
+        tracker.verarbeite(.erstversuch)
+        #expect(tracker.gangart == .trab) // noch kein zweiter Treffer in Folge
+        tracker.verarbeite(.erstversuch)
+        #expect(tracker.gangart == .galopp)
+
+        var nurZweitversuche = GangartTracker(start: .trab)
+        for _ in 1...5 { nurZweitversuche.verarbeite(.zweitversuch) }
+        #expect(nurZweitversuche.gangart == .trab) // stuft weder hoch noch runter
+    }
+
+    @Test("Fehler-Serie überlebt einen Zweitversuch (wie im Prototyp)")
+    func fehlerSerieUeberlebtZweitversuch() {
+        var tracker = GangartTracker(start: .galopp)
+        tracker.verarbeite(.erklaert)
+        tracker.verarbeite(.zweitversuch)
+        let geaendert = tracker.verarbeite(.erklaert)
+        #expect(geaendert)
         #expect(tracker.gangart == .trab)
     }
 

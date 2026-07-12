@@ -1,0 +1,61 @@
+# Web-Prototyp auf GitHub Pages veröffentlichen
+# Läuft nur, wenn sich etwas in web-prototype/ (oder an diesem Workflow) ändert.
+# Ergebnis: https://fritzzetik.github.io/helenas-lern-weide/
+
+name: Web-Prototyp deployen
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web-prototype/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch: {}   # manuell startbar über den Actions-Tab
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest   # Linux reicht (und ist günstig) – hier wird kein Swift gebaut
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Abhängigkeiten installieren
+        working-directory: web-prototype
+        run: npm install
+
+      - name: Bauen
+        working-directory: web-prototype
+        run: npm run build
+
+      - name: Pages konfigurieren
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true   # aktiviert Pages beim ersten Lauf automatisch
+
+      - name: Build-Artefakt hochladen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web-prototype/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Auf GitHub Pages veröffentlichen
+        id: deployment
+        uses: actions/deploy-pages@v4
