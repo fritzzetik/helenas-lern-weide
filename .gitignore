@@ -1,0 +1,25 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+
+# macOS
+.DS_Store
+
+# React / Node (web-prototype)
+node_modules/
+dist/
+.env
+.env.local
+
+# Wichtig: API-Schlüssel niemals committen!
+*.key
+secrets.*

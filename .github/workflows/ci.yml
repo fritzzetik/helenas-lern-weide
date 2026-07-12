@@ -1,0 +1,46 @@
+# CI für Helenas Lern-Weide
+# Läuft bei jedem Push und Pull Request auf main.
+# Testet die Kernlogik (LernWeideCore + MatheWeide) mit Swift Testing auf einem macOS-Runner.
+# Live-LLM-Tests (Tag: liveLLM) werden automatisch übersprungen, da CI=true gesetzt ist.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-core:
+    name: Kernlogik testen (Swift Testing)
+    runs-on: macos-26          # Xcode 26 / iOS-26-SDK
+    timeout-minutes: 15
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Swift-Version anzeigen (Debug)
+        run: swift --version
+
+      - name: Tests ausführen
+        run: swift test --parallel
+
+  # ── Optional: iOS-App im Simulator bauen ──────────────────────────
+  # Aktivieren, sobald ein Xcode-Projekt (.xcodeproj) im Repo liegt.
+  # Braucht KEIN Code Signing (nur Simulator-Build).
+  #
+  # build-ios:
+  #   name: iOS-App bauen (Simulator)
+  #   runs-on: macos-26
+  #   timeout-minutes: 20
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Build für Simulator
+  #       run: |
+  #         xcodebuild build \
+  #           -project HelenasLernWeide.xcodeproj \
+  #           -scheme HelenasLernWeide \
+  #           -destination 'platform=iOS Simulator,name=iPhone 16' \
+  #           CODE_SIGNING_ALLOWED=NO
