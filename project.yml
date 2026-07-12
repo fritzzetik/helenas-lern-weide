@@ -33,7 +33,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: at.zetik.helenaslernweide   # ← ggf. anpassen!
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"          # wird im CI durch die Run-Nummer ersetzt
-        DEVELOPMENT_TEAM: ""                  # leer = automatisch (Cloud Signing via API-Key)
+        DEVELOPMENT_TEAM: ""                  # wird im TestFlight-Workflow aus dem Secret APPLE_TEAM_ID überschrieben
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: "Helenas Lern-Weide"
