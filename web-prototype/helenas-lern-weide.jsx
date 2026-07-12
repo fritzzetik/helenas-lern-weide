@@ -858,7 +858,11 @@ function GangartChip({ level }) {
 /* ---------- Haupt-App ---------- */
 
 export default function HelenasLernWeide() {
-  const [screen, setScreen] = useState("home");
+  // Läuft laut localStorage noch eine Bewegungspause? Dann startet die App
+  // direkt in der Warteschleife – Neuladen führt sofort zurück in die Pause.
+  const [screen, setScreen] = useState(() =>
+    Date.now() < ladeGespeichert("pauseEnde", 0) ? "pause" : "home"
+  );
   const [klasse, setKlasse] = useLokalGespeichert("klasse", "klasse3"); // wird später ein Profil-Setting
   const [station, setStation] = useState(null);
   const [task, setTask] = useState(null);
@@ -1379,9 +1383,12 @@ export default function HelenasLernWeide() {
             </div>
             {pauseFertig && (
               <div className="done-buttons">
-                {wartestation && (
-                  <button className="btn-primary" onClick={() => startRound(wartestation)}>
-                    Weiter geht&rsquo;s {wartestation.emoji}
+                {(wartestation ?? naechsteOffeneStation) && (
+                  <button
+                    className="btn-primary"
+                    onClick={() => startRound(wartestation ?? naechsteOffeneStation)}
+                  >
+                    Weiter geht&rsquo;s {(wartestation ?? naechsteOffeneStation).emoji}
                   </button>
                 )}
                 <button className="btn-secondary" onClick={() => setScreen("home")}>
