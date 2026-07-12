@@ -24,6 +24,10 @@ struct LernWeideApp: App {
     var body: some Scene {
         WindowGroup {
             TurnierpfadView()
+                // Die Weide-Palette ist bewusst warm und hell (wie im Prototyp).
+                // Ohne das würde der Dark Mode weiße Systemschrift auf die
+                // fixen Creme-Flächen mischen – unlesbar.
+                .preferredColorScheme(.light)
                 .task {
                     FortschrittsService(context: container.mainContext).raeumeAuf()
                 }
