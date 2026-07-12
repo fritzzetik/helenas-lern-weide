@@ -14,8 +14,8 @@ Der erste Stall auf der Weide ist **Mathe** (3./4. Klasse, österreichischer Leh
 
 | Pfad | Inhalt |
 |---|---|
-| `Sources/LernWeideCore` | Fachübergreifend: Gangarten (Schritt → Trab → Galopp), adaptive Schwierigkeit, verpflichtende Bewegungspause, Fortschritt |
-| `Sources/MatheWeide` | Mathe-Aufgabenlogik – alle Stationen der 3. Klasse (Aufwärmen bis Sachaufgaben, inkl. Division mit Rest) und der 4. Klasse (Zahlenraum 100.000, Plus & Minus, Runden & Überschlagen, Mal & In, neue Maße t/mm/s, Sachaufgaben) |
+| `Sources/LernWeideCore` | Fachübergreifend: Gangarten & adaptive Schwierigkeit (2 Erstversuch-Treffer → schneller, 2 Fehler → langsamer), Runden mit Sternen & Schleifen-Check 🎀, Turnierpfad-Freischaltung, verpflichtende Bewegungspause |
+| `Sources/MatheWeide` | Mathe-Aufgabenlogik – alle Stationen der 3. Klasse (Aufwärmen bis Sachaufgaben, inkl. Division mit Rest) und der 4. Klasse (Zahlenraum 100.000, Plus & Minus, Runden & Überschlagen, Mal & In, neue Maße t/mm/s, Sachaufgaben); dazu Turnierpfad-Katalog, Stationen-Metadaten und Wiederholungs-Mix |
 | `Tests/` | Swift-Testing-Suite (läuft automatisch per CI) |
 | `ios-app/` | iOS-App-Schicht: Bruno-Erklärungsservice (Foundation Models), Tests, SwiftData-Persistenz – wird am Mac ins Xcode-Projekt eingebunden, nicht von der CI kompiliert |
 | `web-prototype/` | React-Prototyp `helenas-lern-weide.jsx` (Version 5 mit Daisys Tagesbericht) – sofort testbar |
