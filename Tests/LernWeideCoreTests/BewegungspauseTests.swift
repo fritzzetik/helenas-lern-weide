@@ -24,4 +24,22 @@ struct BewegungspauseTests {
         #expect(pause.verbleibendeSekunden == 0)
         #expect(pause.istVorbei)
     }
+
+    @Test("Hintergrund-Zeit wird auf einmal nachgeholt")
+    func nachholenNachHintergrund() {
+        var pause = Bewegungspause()
+        pause.verstreiche(sekunden: 100)
+        #expect(pause.verbleibendeSekunden == 80)
+        #expect(!pause.istVorbei)
+        pause.verstreiche(sekunden: 500) // länger gesperrt als die Pause dauert
+        #expect(pause.verbleibendeSekunden == 0)
+        #expect(pause.istVorbei)
+    }
+
+    @Test("Negative Nachholzeit wird ignoriert")
+    func negativeZeit() {
+        var pause = Bewegungspause()
+        pause.verstreiche(sekunden: -30)
+        #expect(pause.verbleibendeSekunden == 180)
+    }
 }

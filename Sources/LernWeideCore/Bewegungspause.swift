@@ -20,8 +20,13 @@ public struct Bewegungspause: Equatable, Sendable {
 
     /// Zählt eine Sekunde herunter (ein Timer-Tick der UI).
     public mutating func tick() {
-        if verbleibendeSekunden > 0 {
-            verbleibendeSekunden -= 1
-        }
+        verstreiche(sekunden: 1)
+    }
+
+    /// Zieht mehrere Sekunden auf einmal ab – für nachgeholte Zeit, wenn die
+    /// App im Hintergrund war oder das Display gesperrt wurde. Die UI soll das
+    /// Pausenende als fixen Zeitpunkt merken, nicht Ticks zählen.
+    public mutating func verstreiche(sekunden: Int) {
+        verbleibendeSekunden = max(0, verbleibendeSekunden - max(0, sekunden))
     }
 }

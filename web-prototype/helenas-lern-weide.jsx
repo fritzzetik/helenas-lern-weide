@@ -731,20 +731,28 @@ const PAUSE_SEKUNDEN = 180;
 function PausenTimer({ onFertig }) {
   const [status, setStatus] = useState("laeuft"); // laeuft | fertig
   const [restzeit, setRestzeit] = useState(PAUSE_SEKUNDEN);
+  // Das Pausenende ist ein fixer Zeitpunkt, keine Tick-Zählung:
+  // So läuft die Pause auch weiter, wenn das Display gesperrt oder die
+  // App im Hintergrund ist (dort friert der Browser setInterval ein).
+  const endeRef = useRef(Date.now() + PAUSE_SEKUNDEN * 1000);
 
   useEffect(() => {
     if (status !== "laeuft") return;
-    const intervall = setInterval(() => {
-      setRestzeit((t) => {
-        if (t <= 1) {
-          clearInterval(intervall);
-          setStatus("fertig");
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-    return () => clearInterval(intervall);
+    const aktualisiere = () => {
+      const rest = Math.max(0, Math.ceil((endeRef.current - Date.now()) / 1000));
+      setRestzeit(rest);
+      if (rest <= 0) setStatus("fertig");
+    };
+    const intervall = setInterval(aktualisiere, 1000);
+    // Beim Entsperren/Zurückkehren sofort nachziehen statt auf den nächsten Tick zu warten:
+    document.addEventListener("visibilitychange", aktualisiere);
+    window.addEventListener("focus", aktualisiere);
+    aktualisiere();
+    return () => {
+      clearInterval(intervall);
+      document.removeEventListener("visibilitychange", aktualisiere);
+      window.removeEventListener("focus", aktualisiere);
+    };
   }, [status]);
 
   useEffect(() => {
