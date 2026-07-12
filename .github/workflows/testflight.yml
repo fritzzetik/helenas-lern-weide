@@ -53,6 +53,9 @@ jobs:
 
       # DEVELOPMENT_TEAM kommt als Build-Setting-Override aus dem Secret:
       # Automatic Signing braucht die Team-ID, sonst Exit 65 noch vor dem API-Key.
+      # CODE_SIGN_IDENTITY="Apple Distribution": schon das Archiv wird fürs
+      # App-Store-Profil signiert – Development-Profile würden mindestens ein
+      # registriertes Gerät im Team verlangen (frische Accounts haben keines).
       - name: Archivieren (Cloud Signing)
         env:
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
@@ -67,8 +70,8 @@ jobs:
             -archivePath build/LernWeide.xcarchive \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             -allowProvisioningUpdates \
-            -allowProvisioningDeviceRegistration \
             -authenticationKeyID "$KEY_ID" \
             -authenticationKeyIssuerID "$ISSUER_ID" \
             -authenticationKeyPath ~/private_keys/AuthKey_${KEY_ID}.p8 \
