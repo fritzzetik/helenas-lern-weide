@@ -143,11 +143,19 @@ struct TagesberichtKarte: View {
 
             // --- Sonne / Mond / Sterne ---
             if zeit == .nacht {
-                // Sterne, deterministisch verteilt wie im Prototyp
+                // Sterne: deterministisch (das Bild bleibt ruhig), aber per
+                // Hash gestreut – eine lineare Formel ergab eine Diagonale.
+                func streu(_ i: Int, _ salz: UInt64) -> CGFloat {
+                    var z = UInt64(i) &* 0x9E3779B97F4A7C15 &+ salz &* 0xBF58476D1CE4E5B9
+                    z = (z ^ (z >> 30)) &* 0xBF58476D1CE4E5B9
+                    z = (z ^ (z >> 27)) &* 0x94D049BB133111EB
+                    z ^= z >> 31
+                    return CGFloat(z % 100_000) / 100_000
+                }
                 let sternfarbe = Color(red: 1.0, green: 0.969, blue: 0.867)
                 for i in 0..<40 {
-                    let sx = x(CGFloat((i * 173) % 1000))
-                    let sy = y(CGFloat((i * 97) % 560) + 30)
+                    let sx = streu(i, 1) * W
+                    let sy = y(30 + streu(i, 2) * 560)
                     let r = x(i % 5 == 0 ? 4 : 2.5)
                     ctx.fill(Path(ellipseIn: CGRect(x: sx - r, y: sy - r, width: 2 * r, height: 2 * r)), with: .color(sternfarbe))
                 }

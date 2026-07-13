@@ -419,7 +419,8 @@ struct RundenView: View {
             .padding(.horizontal)
         }
         .padding(.vertical, 30)
-        .presentationDetents([.medium, .large])
+        // 80 % Höhe: Brunos 2–3 Sätze passen ohne Aufziehen komplett hin.
+        .presentationDetents([.fraction(0.8), .large])
         .interactiveDismissDisabled()
     }
 
@@ -464,22 +465,26 @@ struct RundenView: View {
                 Spacer()
 
                 if rest > 0 {
-                    VStack(spacing: 8) {
-                        Text("Bewegungspause! 🤸").font(.headline)
+                    // Luftig wie die Warteschleife – die enge Box wirkte gequetscht.
+                    VStack(spacing: 10) {
+                        Text("🤸").font(.system(size: 54))
+                        Text("Bewegungspause!").font(.title2.bold())
                         Text(pausenText)
                             .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Palette.soft)
                             .multilineTextAlignment(.center)
+                            .padding(.horizontal)
                         Text(String(format: "%d:%02d", rest / 60, rest % 60))
-                            .font(.system(size: 42, weight: .bold, design: .rounded))
+                            .font(.system(size: 52, weight: .bold, design: .rounded))
                             .monospacedDigit()
                         ProgressView(value: Double(Bewegungspause.dauerSekunden - rest),
                                      total: Double(Bewegungspause.dauerSekunden))
                             .tint(Palette.grass)
+                            .padding(.horizontal, 30)
                         Text("Wenn Daisy fertig ist, geht's weiter!")
                             .font(.caption).foregroundStyle(Palette.soft)
                     }
-                    .padding()
-                    .background(Color(red: 1.0, green: 0.945, blue: 0.863), in: RoundedRectangle(cornerRadius: 20))
+                    .padding(.bottom, 8)
                 } else {
                     grossKnopf("Nochmal \(station.emoji)") {
                         fertig = false
@@ -515,6 +520,8 @@ extension String: @retroactive Identifiable {
 /// echten Uhr (PausenWaechter), Hintergrund/Sperren ändern nichts.
 struct BewegungspauseView: View {
     @Environment(\.dismiss) private var dismiss
+    // Jedes Mal eine andere Bewegungs-Idee – wie im Prototyp.
+    @State private var pausenText = WeideTexte.pausen.randomElement() ?? WeideTexte.pausen[0]
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { _ in
@@ -524,8 +531,7 @@ struct BewegungspauseView: View {
                 Text(rest > 0 ? "🤸" : "🐴🎉").font(.system(size: 76))
                 Text(rest > 0 ? "Erst fertig hüpfen!" : "Pause vorbei!")
                     .font(.largeTitle.bold())
-                Text(rest > 0 ? "Hüpf, tanz oder galoppier wie Daisy!"
-                              : "Daisy ruft dich zurück auf den Pfad!")
+                Text(rest > 0 ? pausenText : "Daisy ruft dich zurück auf den Pfad!")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(Palette.soft)
                     .multilineTextAlignment(.center).padding(.horizontal)
