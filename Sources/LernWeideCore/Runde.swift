@@ -1,13 +1,14 @@
 // Runde.swift
-// Eine Übungsrunde: 5 Aufgaben, Sterne, Gangart-Anpassung und Schleifen-Check 🎀.
-// Regeln wie im Prototyp: Schleife ab 4 von 5 Sternen in Trab oder Galopp.
+// Eine Übungsrunde: 10 Aufgaben, Sterne, Gangart-Anpassung und Schleifen-Check 🎀.
+// Regeln wie im Prototyp: Schleife ab 8 von 10 Sternen in Trab oder Galopp.
 
 /// Zustand einer laufenden Übungsrunde.
 public struct Runde: Sendable {
-    /// Kurze Runden – ADHS-Prinzip.
-    public static let aufgabenProRunde = 5
-    /// Mindestens 4 von 5 Sternen …
-    public static let schleifeMinSterne = 4
+    /// 10 Aufgaben je Runde – passt besser zu 3 Minuten Bewegungspause
+    /// (Helena-approved, 13.07.2026 🙂). Vorher 5.
+    public static let aufgabenProRunde = 10
+    /// Mindestens 8 von 10 Sternen (gleiche 80-%-Hürde wie vorher 4 von 5) …
+    public static let schleifeMinSterne = 8
     /// … in Trab oder Galopp für eine Schleife 🎀.
     public static let schleifeMinGangart = Gangart.trab
 

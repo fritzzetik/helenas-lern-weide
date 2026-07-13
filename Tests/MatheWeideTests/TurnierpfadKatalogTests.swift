@@ -60,11 +60,11 @@ struct TurnierpfadKatalogTests {
         #expect(quelle == nil)
     }
 
-    @Test("Misch-Station wiederholt an Position 2 und 4 aus geschafften Stationen")
+    @Test("Misch-Station wiederholt an Position 2, 4, 6 und 8 aus geschafften Stationen")
     func wiederholungsMix() {
         var rng = SeedRNG(seed: 8)
         let geschafft: Set<MatheStation> = [.aufwaermenBis100, .zahlenraum1000]
-        for position in [1, 3] {
+        for position in [1, 3, 5, 7] {
             let (aufgabe, quelle) = AufgabenPlaner.aufgabe(
                 fuer: .plusMinusBis1000, position: position, gangart: .galopp,
                 pfad: Turnierpfade.klasse3, geschafft: geschafft,

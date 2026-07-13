@@ -1,8 +1,9 @@
 // AufgabenPlaner.swift
 // Plant die Aufgaben einer Runde inklusive Wiederholungs-Mix – wie im Prototyp:
-// Bei Misch-Stationen sind die Positionen 2 und 4 (Index 1 und 3) Wiederholungen
-// aus einer zufälligen, bereits geschafften Station desselben Pfads –
-// eine Gangart gemütlicher (höchstens Trab). Die erste Aufgabe ist nie eine Wiederholung.
+// Bei Misch-Stationen sind die Positionen 2, 4, 6 und 8 (Index 1, 3, 5, 7)
+// Wiederholungen aus einer zufälligen, bereits geschafften Station desselben
+// Pfads – eine Gangart gemütlicher (höchstens Trab). Die erste und die letzte
+// Aufgabe sind nie Wiederholungen.
 
 import Foundation
 import LernWeideCore
@@ -10,7 +11,7 @@ import LernWeideCore
 public enum AufgabenPlaner {
 
     /// Positionen (0-basiert), an denen Misch-Stationen wiederholen.
-    public static let wiederholungsPositionen: Set<Int> = [1, 3]
+    public static let wiederholungsPositionen: Set<Int> = [1, 3, 5, 7]
 
     /// Erzeugt die Aufgabe für eine Position der Runde.
     /// Liefert zusätzlich die Quellstation, wenn es eine Wiederholung ist.

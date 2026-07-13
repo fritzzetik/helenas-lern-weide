@@ -451,10 +451,11 @@ struct RundenView: View {
                     }
                 }
 
-                HStack(spacing: 8) {
+                HStack(spacing: 3) {
+                    // 10 Sterne müssen in eine Zeile passen
                     ForEach(0..<Runde.aufgabenProRunde, id: \.self) { i in
                         Text("★")
-                            .font(.system(size: 36))
+                            .font(.system(size: 26))
                             .foregroundStyle(i < runde.sterne ? Palette.sun : Color(red: 0.886, green: 0.847, blue: 0.776))
                     }
                 }

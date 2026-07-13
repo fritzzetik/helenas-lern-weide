@@ -33,8 +33,8 @@ const PALETTE = {
   lila: "#C67AB1",
 };
 
-const ROUND_LENGTH = 5;
-const SCHLEIFE_MIN_STERNE = 4;   // mind. 4 von 5 Sternen …
+const ROUND_LENGTH = 10;
+const SCHLEIFE_MIN_STERNE = 8;   // mind. 8 von 10 Sternen …
 const SCHLEIFE_MIN_GANGART = 1;  // … in Trab oder Galopp
 
 const GANGARTEN = [
@@ -941,7 +941,7 @@ export default function HelenasLernWeide() {
   /* Aufgabe für Position nr erzeugen. Bei Misch-Stationen sind die
      Positionen 2 und 4 Wiederholungen (falls es Geschafftes gibt). */
   function erzeugeAufgabe(nr, lvl) {
-    if (station.mix && (nr === 1 || nr === 3)) {
+    if (station.mix && [1, 3, 5, 7].includes(nr)) {
       const w = wiederholungsAufgabe();
       if (w) return w;
     }
@@ -1675,7 +1675,7 @@ const css = `
 .done-card { text-align: center; align-items: center; }
 .done-card h2 { font-family: 'Baloo 2', cursive; margin: 0; font-size: 28px; }
 .done-text { font-weight: 700; margin: 0; }
-.stars { font-size: 40px; letter-spacing: 6px; }
+.stars { font-size: 28px; letter-spacing: 3px; }  /* 10 Sterne müssen in eine Zeile passen */
 .star { color: #E2D8C6; }
 .star.on { color: ${PALETTE.sun}; text-shadow: 0 2px 0 rgba(0,0,0,.08); }
 .done-gangart { font-weight: 700; margin: 0; }
