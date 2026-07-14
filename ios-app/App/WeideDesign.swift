@@ -44,11 +44,17 @@ extension Gangart {
 extension MatheStation {
     var akzentfarbe: Color {
         switch self {
-        case .aufwaermenBis100, .plusMinusBis1000, .plusMinusBis100000: return Palette.grass
-        case .zahlenraum1000, .divisionMitRest, .zahlenraum100000: return Palette.blue
-        case .malreihen, .inRechnungen, .malInBis100000: return Palette.coral
-        case .laengenmasse, .gewichte, .geldUndZeit, .neueMasse: return Palette.sun
-        case .abschlussturnier3, .abschlussturnier4, .rundenUndUeberschlagen: return Palette.lila
+        case .zaehlenBis20, .plusMinusBis10, .plusMinusBis20,
+             .plusMinusOhneUebertrag, .plusMinusMitUebertrag,
+             .aufwaermenBis100, .plusMinusBis1000, .plusMinusBis100000: return Palette.grass
+        case .zahlenraum20, .zahlenraum100,
+             .zahlenraum1000, .divisionMitRest, .zahlenraum100000: return Palette.blue
+        case .zerlegenErgaenzen, .kleineMalreihen, .ersteInRechnungen,
+             .malreihen, .inRechnungen, .malInBis100000: return Palette.coral
+        case .verdoppelnHalbieren,
+             .laengenmasse, .gewichte, .geldUndZeit, .neueMasse: return Palette.sun
+        case .abschlussturnier1, .abschlussturnier2,
+             .abschlussturnier3, .abschlussturnier4, .rundenUndUeberschlagen: return Palette.lila
         }
     }
 }

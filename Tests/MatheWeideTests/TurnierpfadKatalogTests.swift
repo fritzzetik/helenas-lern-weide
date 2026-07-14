@@ -8,13 +8,55 @@ import LernWeideCore
 @Suite("Stationen-Katalog und Aufgabenplaner")
 struct TurnierpfadKatalogTests {
 
-    @Test("Beide Pfade zusammen enthalten alle Stationen genau einmal")
+    @Test("Alle Pfade zusammen enthalten alle Stationen genau einmal")
     func vollstaendig() {
-        let alle = Turnierpfade.klasse3.stationen + Turnierpfade.klasse4.stationen
+        let alle = Turnierpfade.alle.flatMap(\.stationen)
+        #expect(Turnierpfade.klasse1.stationen.count == 6)
+        #expect(Turnierpfade.klasse2.stationen.count == 7)
         #expect(Turnierpfade.klasse3.stationen.count == 10)
         #expect(Turnierpfade.klasse4.stationen.count == 6)
         #expect(alle.count == MatheStation.allCases.count)
         #expect(Set(alle).count == alle.count)
+    }
+
+    @Test("Rundenlängen: 5 für die Kleinen, 10 für die Großen")
+    func rundenLaengen() {
+        #expect(Turnierpfade.klasse1.aufgabenProRunde == 5)
+        #expect(Turnierpfade.klasse2.aufgabenProRunde == 5)
+        #expect(Turnierpfade.klasse3.aufgabenProRunde == 10)
+        #expect(Turnierpfade.klasse4.aufgabenProRunde == 10)
+        #expect(AufgabenPlaner.wiederholungsPositionen(rundenLaenge: 5) == [1, 3])
+        #expect(AufgabenPlaner.wiederholungsPositionen(rundenLaenge: 10) == [1, 3, 5, 7])
+    }
+
+    @Test("1. Klasse: Antworten bleiben im Zahlenraum 20", arguments: Gangart.allCases)
+    func klasse1Zahlenraum(gangart: Gangart) {
+        var rng = SeedRNG(seed: 11)
+        for station in Turnierpfade.klasse1.stationen {
+            for _ in 1...100 {
+                guard case .zahl(let z) = station.neueAufgabe(gangart: gangart, using: &rng) else {
+                    Issue.record("Die 1. Klasse hat nur Zahl-Aufgaben")
+                    return
+                }
+                #expect(z.antwort >= 0, "\(z.frage)")
+                #expect(z.antwort <= 20, "\(z.frage)")
+            }
+        }
+    }
+
+    @Test("2. Klasse: Antworten bleiben im Zahlenraum 100", arguments: Gangart.allCases)
+    func klasse2Zahlenraum(gangart: Gangart) {
+        var rng = SeedRNG(seed: 12)
+        for station in Turnierpfade.klasse2.stationen {
+            for _ in 1...100 {
+                guard case .zahl(let z) = station.neueAufgabe(gangart: gangart, using: &rng) else {
+                    Issue.record("Die 2. Klasse hat nur Zahl-Aufgaben")
+                    return
+                }
+                #expect(z.antwort >= 0, "\(z.frage)")
+                #expect(z.antwort <= 100, "\(z.frage)")
+            }
+        }
     }
 
     @Test(

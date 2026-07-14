@@ -5,10 +5,23 @@ import Testing
 @Suite("Runde und Schleife 🎀")
 struct RundeTests {
 
-    @Test("Eine Runde hat 10 Aufgaben, Schleife ab 8 Sternen")
-    func konstanten() {
-        #expect(Runde.aufgabenProRunde == 10)
-        #expect(Runde.schleifeMinSterne == 8)
+    @Test("Standard-Runde: 10 Aufgaben, Schleife ab 8 Sternen (80 %)")
+    func standardLaenge() {
+        let runde = Runde()
+        #expect(runde.aufgabenProRunde == 10)
+        #expect(runde.schleifeMinSterne == 8)
+    }
+
+    @Test("Kurze Runde (1./2. Klasse): 5 Aufgaben, Schleife ab 4 Sternen")
+    func kurzeRunde() {
+        var runde = Runde(gangart: .trab, aufgabenProRunde: 5)
+        #expect(runde.schleifeMinSterne == 4)
+        runde.verarbeite(.erklaert)                       // kein Stern
+        for _ in 1...4 { runde.verarbeite(.zweitversuch) } // 4 Sterne, Tempo bleibt Trab
+        #expect(runde.istFertig)
+        #expect(runde.sterne == 4)
+        #expect(runde.gangart == .trab)
+        #expect(runde.schleifeVerdient)
     }
 
     @Test("Perfekte Runde ab Schritt: 10 Sterne, endet im Galopp, Schleife verdient")

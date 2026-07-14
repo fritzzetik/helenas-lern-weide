@@ -14,9 +14,12 @@ public enum StationsStatus: Sendable, Equatable {
 /// Schleife 🎀 hat. Geschaffte Stationen bleiben immer offen.
 public struct Turnierpfad<StationID: Hashable & Sendable>: Sendable {
     public let stationen: [StationID]
+    /// Rundenlänge dieses Pfads: 5 für die 1./2. Klasse, 10 für die 3./4.
+    public let aufgabenProRunde: Int
 
-    public init(stationen: [StationID]) {
+    public init(stationen: [StationID], aufgabenProRunde: Int = 10) {
         self.stationen = stationen
+        self.aufgabenProRunde = aufgabenProRunde
     }
 
     public func status(_ station: StationID, geschafft: Set<StationID>) -> StationsStatus {

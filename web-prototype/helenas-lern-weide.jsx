@@ -33,9 +33,11 @@ const PALETTE = {
   lila: "#C67AB1",
 };
 
-const ROUND_LENGTH = 10;
-const SCHLEIFE_MIN_STERNE = 8;   // mind. 8 von 10 Sternen …
+// Rundenlänge hängt vom Pfad ab: 1./2. Klasse üben 5 Aufgaben, 3./4. Klasse 10.
+// Schleifen-Hürde ist immer 80 % der Sterne (4 von 5 bzw. 8 von 10) …
+const SCHLEIFEN_QUOTE = 0.8;
 const SCHLEIFE_MIN_GANGART = 1;  // … in Trab oder Galopp
+const schleifeMinSterne = (rundenLaenge) => Math.round(rundenLaenge * SCHLEIFEN_QUOTE);
 
 const GANGARTEN = [
   { name: "Schritt", emoji: "🌿" },
@@ -409,11 +411,148 @@ function genSach4(level) {
    bereits geschafften Stationen bei (jede 3. Station)
    ============================================================ */
 
+/* ============================================================
+   Generatoren 1. Klasse (Zahlenraum 20)
+   ============================================================ */
+
+function genZaehlen(level) {
+  if (level === 0) { const n = rand(1, 9); return mach(`Welche Zahl kommt direkt nach ${n}?`, n + 1, "Zählen bis 10", `Zähl einfach laut weiter: ${n}, …`); }
+  if (level === 1) { const n = rand(2, 15); return mach(`Welche Zahl kommt direkt vor ${n}?`, n - 1, "Zählen bis 20", "Zähl einen Schritt zurück."); }
+  const n = rand(1, 17); return mach(`Zähle weiter: ${n}, ${n + 1}, ?`, n + 2, "Weiterzählen bis 20", "Immer eins dazu.");
+}
+
+function genZerlegen(level) {
+  if (level === 0) { const ziel = rand(4, 6); const a = rand(1, ziel - 1); return mach(`${a} + ? = ${ziel}`, ziel - a, "Ergänzen bis 6", `Zähl von ${a} hinauf bis ${ziel} – wie viele Schritte?`); }
+  if (level === 1) { const a = rand(1, 9); return mach(`${a} + ? = 10`, 10 - a, "Ergänzen auf 10", `Die Zehnerfreunde! ${a} und ${10 - a} gehören zusammen.`); }
+  const a = rand(11, 19); return mach(`${a} + ? = 20`, 20 - a, "Ergänzen auf 20", "Schau auf die Einer: Wie viel fehlt auf den vollen Zwanziger?");
+}
+
+function genPlusMinus10(level) {
+  if (level === 0) { const a = rand(1, 5); const b = rand(1, 6 - a); return mach(`${a} + ${b} = ?`, a + b, "Plus bis 6", `Zähl von ${a} einfach ${b} weiter.`); }
+  if (level === 1) {
+    if (Math.random() < 0.5) { const a = rand(2, 9); const b = rand(1, 10 - a); return mach(`${a} + ${b} = ?`, a + b, "Plus bis 10", "Zähl von der größeren Zahl weiter."); }
+    const a = rand(3, 10); const b = rand(1, a - 1); return mach(`${a} − ${b} = ?`, a - b, "Minus bis 10", `Zähl von ${a} rückwärts.`);
+  }
+  const a = rand(1, 4); const b = rand(1, 3); const c = rand(1, 10 - a - b);
+  return mach(`${a} + ${b} + ${c} = ?`, a + b + c, "Plus mit drei Zahlen", `Rechne zuerst ${a} + ${b}, dann kommt ${c} dazu.`);
+}
+
+function genZahlenraum20(level) {
+  if (level === 0) { const e = rand(1, 9); return mach(`10 + ${e} = ?`, 10 + e, "Zehner und Einer", `Ein voller Zehner und ${e} Einer.`); }
+  if (level === 1) { const e = rand(1, 9); return mach(`1 Z + ${e} E = ?`, 10 + e, "Zehner und Einer", "Z ist der Zehner, E sind die Einer."); }
+  const n = 10 + rand(1, 9); return mach(`Wie viele Einer hat die Zahl ${n}?`, n - 10, "Stellenwert bis 20", "Der Zehner ist voll – was bleibt übrig?");
+}
+
+function genPlusMinus20(level) {
+  if (level === 0) { const a = 10 + rand(1, 5); const b = rand(1, 20 - a); return mach(`${a} + ${b} = ?`, a + b, "Plus bis 20 ohne Übergang", "Nur die Einer ändern sich."); }
+  if (level === 1) { const a = 10 + rand(3, 9); const b = rand(1, a - 11); return mach(`${a} − ${b} = ?`, a - b, "Minus bis 20 ohne Übergang", "Nur die Einer ändern sich."); }
+  if (Math.random() < 0.5) { const a = rand(5, 9); const b = rand(11 - a, 9); return mach(`${a} + ${b} = ?`, a + b, "Plus mit Zehnerübergang", "Rechne zuerst bis 10, dann den Rest dazu."); }
+  const a = rand(11, 18); const b = rand(a - 9, 9); return mach(`${a} − ${b} = ?`, a - b, "Minus mit Zehnerübergang", "Zieh zuerst bis zum Zehner ab, dann den Rest.");
+}
+
+function genSach1(level) {
+  if (level === 0) { const a = rand(2, 5); const b = rand(1, 4); return mach(`Bruno hat ${a} Knochen und bekommt ${b} dazu. Wie viele hat er jetzt?`, a + b, "Sachaufgabe: dazubekommen", `„Dazu" heißt Plus: ${a} + ${b}.`); }
+  if (level === 1) { const b = rand(5, 10); const a = rand(1, b - 1); return mach(`Daisy hat ${b} Äpfel und frisst ${a} davon. Wie viele bleiben übrig?`, b - a, "Sachaufgabe: wegnehmen", `„Übrig bleiben" heißt Minus: ${b} − ${a}.`); }
+  const a = rand(5, 9); const b = rand(3, 8); const c = rand(1, Math.min(a + b - 1, 9));
+  return mach(`Auf der Weide stehen ${a} Hühner und ${b} Gänse. ${c} laufen weg. Wie viele Tiere bleiben?`, a + b - c, "Sachaufgabe mit zwei Schritten", `Zuerst alle zusammenzählen (${a} + ${b}), dann ${c} wegnehmen.`);
+}
+
+/* ============================================================
+   Generatoren 2. Klasse (Zahlenraum 100, kleines Einmaleins)
+   ============================================================ */
+
+function genZahlenraum100(level) {
+  if (level === 0) { const z = rand(2, 9); const e = rand(1, 9); return mach(`${z} Z + ${e} E = ?`, z * 10 + e, "Zehner und Einer", "Z sind Zehner, E sind Einer – einfach nebeneinander."); }
+  if (level === 1) { let n = rand(21, 89); if (n % 10 === 0) n += rand(1, 9); return mach(`Welcher Zehner kommt direkt nach ${n}?`, Math.ceil(n / 10) * 10, "Nachbarzehner finden", "Der nächste Zehner ist die nächste runde Zahl."); }
+  const n = rand(15, 85);
+  if (Math.random() < 0.5) return mach(`${n} + 10 = ?`, n + 10, "Zehnersprünge", "Nur der Zehner ändert sich.");
+  return mach(`${n} − 10 = ?`, n - 10, "Zehnersprünge", "Nur der Zehner ändert sich.");
+}
+
+function genPlusMinusOhne(level) {
+  if (level === 0) { const a = rand(2, 7) * 10; const b = rand(1, 9 - a / 10) * 10; return mach(`${a} + ${b} = ?`, a + b, "Glatte Zehner", "Rechne mit den Zehnern – die Null bleibt."); }
+  if (level === 1) {
+    const az = rand(2, 6); const ae = rand(1, 5); const bz = rand(1, 8 - az); const be = rand(1, 9 - ae);
+    const a = az * 10 + ae; const b = bz * 10 + be;
+    return mach(`${a} + ${b} = ?`, a + b, "Plus ohne Übertrag", "Zehner zu Zehnern, Einer zu Einern.");
+  }
+  const az = rand(4, 9); const ae = rand(5, 9); const bz = rand(1, az - 1); const be = rand(1, ae - 1);
+  const a = az * 10 + ae; const b = bz * 10 + be;
+  return mach(`${a} − ${b} = ?`, a - b, "Minus ohne Übertrag", "Zehner minus Zehner, Einer minus Einer.");
+}
+
+function genPlusMinusMit(level) {
+  if (level === 0) { const a = rand(15, 45); const b = rand(6, 9); return mach(`${a} + ${b} = ?`, a + b, "Plus über den Zehner", "Rechne zuerst bis zum nächsten Zehner, dann den Rest."); }
+  if (level === 1) {
+    const ae = rand(1, 4); const be = rand(ae + 1, 9);
+    const a = rand(3, 8) * 10 + ae; const b = rand(1, Math.floor(a / 10) - 1) * 10 + be;
+    return mach(`${a} − ${b} = ?`, a - b, "Minus über den Zehner", "Zieh zuerst bis zum Zehner ab, dann den Rest.");
+  }
+  let b = rand(25, 85); if (b % 10 === 0) b += 3;
+  return mach(`${b} + ? = 100`, 100 - b, "Ergänzen auf 100", "Zuerst zum nächsten Zehner, dann die Zehner bis 100.");
+}
+
+function genKleineMalreihen(level) {
+  const reihe = level === 0 ? 2 : level === 1 ? pick([5, 10]) : pick([3, 4]);
+  const b = rand(1, 10);
+  return mach(`${reihe} · ${b} = ?`, reihe * b, `Malreihe von ${reihe}`, `Denk an die ${reihe}er-Reihe: immer ${reihe} dazu.`);
+}
+
+function genErsteIn(level) {
+  const teiler = level === 0 ? 2 : level === 1 ? pick([5, 10]) : pick([3, 4]);
+  const ergebnis = rand(1, 10); const zahl = teiler * ergebnis;
+  return mach(`${teiler} in ${zahl} = ?`, ergebnis, "In-Rechnungen", `Wie oft passt ${teiler} in ${zahl}? Denk an die ${teiler}er-Reihe.`);
+}
+
+function genVerdoppeln(level) {
+  if (level === 0) { const a = rand(2, 10); return mach(`Verdopple ${a}!`, a * 2, "Verdoppeln", `Verdoppeln heißt: ${a} + ${a}.`); }
+  if (level === 1) { const a = rand(2, 10) * 2; return mach(`Die Hälfte von ${a} = ?`, a / 2, "Halbieren", `Teile ${a} in zwei gleich große Teile.`); }
+  if (Math.random() < 0.5) { const a = rand(2, 5) * 10; return mach(`Verdopple ${a}!`, a * 2, "Verdoppeln mit Zehnern", "Verdopple die Zehner – die Null bleibt."); }
+  const a = rand(2, 5) * 20; return mach(`Die Hälfte von ${a} = ?`, a / 2, "Halbieren mit Zehnern", "Halbiere die Zehner – die Null bleibt.");
+}
+
+function genSach2(level) {
+  if (level === 0) { const preis = rand(2, 9); return mach(`Ein Sackerl Karotten kostet ${preis} €. Was kosten 2 Sackerl?`, preis * 2, "Sachaufgabe mit Geld", `2 Sackerl heißt: ${preis} + ${preis}.`); }
+  if (level === 1) { const a = rand(25, 60); const b = rand(10, 95 - a); return mach(`Im Stall liegen ${a} Heuballen, es kommen ${b} dazu. Wie viele sind es jetzt?`, a + b, "Sachaufgabe: dazubekommen", `„Dazu" heißt Plus: ${a} + ${b}.`); }
+  const preis = rand(12, 45); const bezahlt = (Math.floor(preis / 10) + 1) * 10 + pick([0, 10]);
+  return mach(`Das Putzzeug für Daisy kostet ${preis} €. Du zahlst mit ${bezahlt} €. Wie viel bekommst du zurück?`, bezahlt - preis, "Sachaufgabe: Rückgeld", `Rückgeld heißt Minus: ${bezahlt} − ${preis}.`);
+}
+
 const TURNIERPFADE = [
+  {
+    id: "klasse1",
+    titel: "1. Klasse",
+    emoji: "🐣",
+    rundenLaenge: 5,
+    stationen: [
+      { id: "s1_zaehlen", emoji: "🐣", titel: "Zählen & Zahlen", sub: "Nachbarzahlen finden", gen: genZaehlen, farbe: PALETTE.grass },
+      { id: "s1_zerlegen", emoji: "🧩", titel: "Zerlegen & Ergänzen", sub: "Wie viel fehlt?", gen: genZerlegen, farbe: PALETTE.coral },
+      { id: "s1_pm10", emoji: "🌱", titel: "Plus & Minus bis 10", sub: "die ersten Rechnungen", gen: genPlusMinus10, farbe: PALETTE.grass },
+      { id: "s1_zr20", emoji: "🔢", titel: "Zahlenraum 20", sub: "Zehner und Einer", gen: genZahlenraum20, farbe: PALETTE.blue },
+      { id: "s1_pm20", emoji: "➕", titel: "Plus & Minus bis 20", sub: "über den Zehner", gen: genPlusMinus20, farbe: PALETTE.grass, mix: true },
+      { id: "s1_final", emoji: "🏆", titel: "Abschlussturnier", sub: "kleine Sachaufgaben", gen: genSach1, farbe: PALETTE.lila, mix: true },
+    ],
+  },
+  {
+    id: "klasse2",
+    titel: "2. Klasse",
+    emoji: "🌱",
+    rundenLaenge: 5,
+    stationen: [
+      { id: "s2_zr100", emoji: "🔢", titel: "Zahlenraum 100 entdecken", sub: "Zehner und Einer", gen: genZahlenraum100, farbe: PALETTE.blue },
+      { id: "s2_pmo", emoji: "➕", titel: "Plus & Minus ohne Übertrag", sub: "Schritt für Schritt", gen: genPlusMinusOhne, farbe: PALETTE.grass },
+      { id: "s2_pmm", emoji: "💪", titel: "Plus & Minus mit Übertrag", sub: "über den Zehner", gen: genPlusMinusMit, farbe: PALETTE.grass, mix: true },
+      { id: "s2_mal", emoji: "✖️", titel: "Malreihen 2, 5 und 10", sub: "das kleine Einmaleins beginnt", gen: genKleineMalreihen, farbe: PALETTE.coral },
+      { id: "s2_in", emoji: "🍏", titel: "Erste In-Rechnungen", sub: "Teilen kennenlernen", gen: genErsteIn, farbe: PALETTE.coral },
+      { id: "s2_verdopp", emoji: "🪞", titel: "Verdoppeln & Halbieren", sub: "doppelt und halb", gen: genVerdoppeln, farbe: PALETTE.sun },
+      { id: "s2_final", emoji: "🏆", titel: "Abschlussturnier", sub: "gemischte Sachaufgaben", gen: genSach2, farbe: PALETTE.lila, mix: true },
+    ],
+  },
   {
     id: "klasse3",
     titel: "3. Klasse",
     emoji: "🏠",
+    rundenLaenge: 10,
     stationen: [
       { id: "s3_warm", emoji: "🐾", titel: "Aufwärmen: Plus & Minus bis 100", sub: "Wiederholung", gen: genWarm100, farbe: PALETTE.grass },
       { id: "s3_zr", emoji: "🔢", titel: "Zahlenraum 1000 entdecken", sub: "Hunderter, Zehner, Einer", gen: genZahlenraum1000, farbe: PALETTE.blue },
@@ -431,6 +570,7 @@ const TURNIERPFADE = [
     id: "klasse4",
     titel: "4. Klasse",
     emoji: "🏇",
+    rundenLaenge: 10,
     stationen: [
       { id: "s4_zr", emoji: "🔢", titel: "Zahlenraum 100.000 entdecken", sub: "große Zahlen verstehen", gen: genZahlenraum100k, farbe: PALETTE.blue },
       { id: "s4_pm", emoji: "➕", titel: "Plus & Minus bis 100.000", sub: "rechnen im großen Raum", gen: genPlusMinus100k, farbe: PALETTE.grass },
@@ -918,6 +1058,7 @@ export default function HelenasLernWeide() {
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
   const pfad = TURNIERPFADE.find((p) => p.id === klasse) ?? TURNIERPFADE[0];
+  const rundenLaenge = pfad.rundenLaenge;
 
   /* Eine Station ist offen, wenn sie die erste ist oder die vorige
      eine Schleife hat. Geschaffte Stationen bleiben immer offen. */
@@ -941,7 +1082,8 @@ export default function HelenasLernWeide() {
   /* Aufgabe für Position nr erzeugen. Bei Misch-Stationen sind die
      Positionen 2 und 4 Wiederholungen (falls es Geschafftes gibt). */
   function erzeugeAufgabe(nr, lvl) {
-    if (station.mix && [1, 3, 5, 7].includes(nr)) {
+    // Jede zweite Position wiederholt – außer der ersten und der letzten.
+    if (station.mix && nr % 2 === 1 && nr < rundenLaenge - 1) {
       const w = wiederholungsAufgabe();
       if (w) return w;
     }
@@ -1014,9 +1156,9 @@ export default function HelenasLernWeide() {
     setQuercheckRichtig(null);
 
     let schleifeNeu = false;
-    if (taskNr + 1 >= ROUND_LENGTH) {
+    if (taskNr + 1 >= rundenLaenge) {
       // Runde fertig → Schleifen-Check 🎀
-      const bestanden = finaleSterne >= SCHLEIFE_MIN_STERNE && neuesLevel >= SCHLEIFE_MIN_GANGART;
+      const bestanden = finaleSterne >= schleifeMinSterne(rundenLaenge) && neuesLevel >= SCHLEIFE_MIN_GANGART;
       schleifeNeu = bestanden && !schleifen[station.id];
       if (schleifeNeu) {
         setSchleifen((s) => ({ ...s, [station.id]: true }));
@@ -1189,7 +1331,7 @@ export default function HelenasLernWeide() {
           </div>
 
           <p className="footnote">
-            🎀 Schleife = mindestens {SCHLEIFE_MIN_STERNE} von {ROUND_LENGTH} Sternen im {GANGARTEN[SCHLEIFE_MIN_GANGART].name} oder schneller.
+            🎀 Schleife = mindestens {schleifeMinSterne(rundenLaenge)} von {rundenLaenge} Sternen im {GANGARTEN[SCHLEIFE_MIN_GANGART].name} oder schneller.
             <br />
             Geschaffte Stationen bleiben als Freies Training offen. 🐾
           </p>
@@ -1203,7 +1345,7 @@ export default function HelenasLernWeide() {
               <button className="btn-back" onClick={() => setScreen("home")}>← Pfad</button>
               <GangartChip level={level} />
             </div>
-            <Weideweg step={taskNr} total={ROUND_LENGTH} />
+            <Weideweg step={taskNr} total={rundenLaenge} />
           </div>
 
           <div className="card">
@@ -1329,14 +1471,14 @@ export default function HelenasLernWeide() {
                 {!rundenErgebnis.hatSchleife && (
                   <p className="done-text">
                     Starke Trainingsrunde! Für die Schleife 🎀 brauchst du{" "}
-                    {SCHLEIFE_MIN_STERNE} Sterne im {GANGARTEN[SCHLEIFE_MIN_GANGART].name} – du schaffst das!
+                    {schleifeMinSterne(rundenLaenge)} Sterne im {GANGARTEN[SCHLEIFE_MIN_GANGART].name} – du schaffst das!
                   </p>
                 )}
               </>
             )}
 
-            <div className="stars" aria-label={`${rundenErgebnis.sterne} von ${ROUND_LENGTH} Sternen`}>
-              {Array.from({ length: ROUND_LENGTH }).map((_, i) => (
+            <div className="stars" aria-label={`${rundenErgebnis.sterne} von ${rundenLaenge} Sternen`}>
+              {Array.from({ length: rundenLaenge }).map((_, i) => (
                 <span key={i} className={i < rundenErgebnis.sterne ? "star on" : "star"}>★</span>
               ))}
             </div>
@@ -1478,12 +1620,13 @@ const css = `
 /* --- Klassen-Schalter (später Profil-Setting) --- */
 .klassen-schalter {
   display: flex; gap: 8px;
+  flex-wrap: wrap;               /* vier Klassen → zwei Reihen am Handy */
   background: #EFE7D6;
-  border-radius: 999px;
+  border-radius: 24px;
   padding: 6px;
 }
 .klasse-btn {
-  flex: 1;
+  flex: 1 1 40%;
   border: 3px solid transparent;
   background: transparent;
   border-radius: 999px;

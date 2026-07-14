@@ -3,26 +3,35 @@
 // Regeln wie im Prototyp: Schleife ab 8 von 10 Sternen in Trab oder Galopp.
 
 /// Zustand einer laufenden Übungsrunde.
+/// Die Rundenlänge hängt vom Turnierpfad ab: 1./2. Klasse üben 5 Aufgaben,
+/// 3./4. Klasse 10 (Helena-approved 🙂). Die Schleifen-Hürde bleibt immer
+/// dieselbe: 80 % der Sterne in Trab oder Galopp.
 public struct Runde: Sendable {
-    /// 10 Aufgaben je Runde – passt besser zu 3 Minuten Bewegungspause
-    /// (Helena-approved, 13.07.2026 🙂). Vorher 5.
-    public static let aufgabenProRunde = 10
-    /// Mindestens 8 von 10 Sternen (gleiche 80-%-Hürde wie vorher 4 von 5) …
-    public static let schleifeMinSterne = 8
-    /// … in Trab oder Galopp für eine Schleife 🎀.
+    /// Standard-Rundenlänge (3./4. Klasse).
+    public static let standardLaenge = 10
+    /// Für eine Schleife 🎀: mindestens 80 % der Sterne …
+    public static let schleifenQuote = 0.8
+    /// … in Trab oder Galopp.
     public static let schleifeMinGangart = Gangart.trab
+
+    public let aufgabenProRunde: Int
+    /// Mindest-Sterne für die Schleife (80 % der Rundenlänge, gerundet).
+    public var schleifeMinSterne: Int {
+        max(1, Int((Double(aufgabenProRunde) * Self.schleifenQuote).rounded()))
+    }
 
     /// Wie viele Aufgaben schon beantwortet sind (0-basiert = Index der nächsten Aufgabe).
     public private(set) var position = 0
     public private(set) var sterne = 0
     public private(set) var tracker: GangartTracker
 
-    public init(gangart: Gangart = .schritt) {
+    public init(gangart: Gangart = .schritt, aufgabenProRunde: Int = Runde.standardLaenge) {
+        self.aufgabenProRunde = aufgabenProRunde
         tracker = GangartTracker(start: gangart)
     }
 
     public var gangart: Gangart { tracker.gangart }
-    public var istFertig: Bool { position >= Self.aufgabenProRunde }
+    public var istFertig: Bool { position >= aufgabenProRunde }
 
     /// Verarbeitet das Ergebnis der aktuellen Aufgabe.
     /// Liefert `true`, wenn sich die Gangart geändert hat.
@@ -37,6 +46,6 @@ public struct Runde: Sendable {
     /// Schleife 🎀 verdient? Zählt die Gangart NACH der letzten Antwort,
     /// genau wie im Prototyp.
     public var schleifeVerdient: Bool {
-        istFertig && sterne >= Self.schleifeMinSterne && gangart >= Self.schleifeMinGangart
+        istFertig && sterne >= schleifeMinSterne && gangart >= Self.schleifeMinGangart
     }
 }

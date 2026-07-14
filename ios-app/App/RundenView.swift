@@ -79,7 +79,7 @@ struct RundenView: View {
                 GangartChip(gangart: runde.gangart)
             }
 
-            Weideweg(schritt: runde.position, gesamt: Runde.aufgabenProRunde)
+            Weideweg(schritt: runde.position, gesamt: runde.aufgabenProRunde)
 
             ScrollView {
                 karte
@@ -281,7 +281,8 @@ struct RundenView: View {
             ($0, Gangart(rawValue: service.fortschritt(fuer: $0.rawValue).gangart) ?? .schritt)
         })
         hatteSchleife = geschafft.contains(station)
-        runde = Runde(gangart: gangarten[station] ?? .schritt)
+        runde = Runde(gangart: gangarten[station] ?? .schritt,
+                      aufgabenProRunde: pfad.aufgabenProRunde)
         levelMsg = nil
         brunoService.aufwaermen()
         naechsteAufgabe()
@@ -383,7 +384,7 @@ struct RundenView: View {
     private func rundeSpeichern() {
         FortschrittsService(context: context).rundeBeendet(
             stationID: station.rawValue,
-            aufgaben: Runde.aufgabenProRunde,
+            aufgaben: runde.aufgabenProRunde,
             sterne: runde.sterne,
             gangart: runde.gangart.rawValue,
             schleifeGewonnen: runde.schleifeVerdient
@@ -444,7 +445,7 @@ struct RundenView: View {
                     Text("🏆").font(.system(size: 84))
                     Text("Runde geschafft!").font(.largeTitle.bold())
                     if !hatteSchleife {
-                        Text("Starke Trainingsrunde! Für die Schleife 🎀 brauchst du \(Runde.schleifeMinSterne) Sterne im \(Runde.schleifeMinGangart.anzeigename) – du schaffst das!")
+                        Text("Starke Trainingsrunde! Für die Schleife 🎀 brauchst du \(runde.schleifeMinSterne) Sterne im \(Runde.schleifeMinGangart.anzeigename) – du schaffst das!")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Palette.soft)
                             .multilineTextAlignment(.center).padding(.horizontal)
@@ -453,7 +454,7 @@ struct RundenView: View {
 
                 HStack(spacing: 3) {
                     // 10 Sterne müssen in eine Zeile passen
-                    ForEach(0..<Runde.aufgabenProRunde, id: \.self) { i in
+                    ForEach(0..<runde.aufgabenProRunde, id: \.self) { i in
                         Text("★")
                             .font(.system(size: 26))
                             .foregroundStyle(i < runde.sterne ? Palette.sun : Color(red: 0.886, green: 0.847, blue: 0.776))

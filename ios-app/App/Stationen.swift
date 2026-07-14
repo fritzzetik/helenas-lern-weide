@@ -77,7 +77,12 @@ extension MatheStation {
 /// Die Turnierpfade aus dem Package, ausgewählt nach Profil-Klasse.
 enum Pfade {
     static func pfad(fuer klasse: String) -> Turnierpfad<MatheStation> {
-        klasse == "klasse4" ? Turnierpfade.klasse4 : Turnierpfade.klasse3
+        switch klasse {
+        case "klasse1": return Turnierpfade.klasse1
+        case "klasse2": return Turnierpfade.klasse2
+        case "klasse4": return Turnierpfade.klasse4
+        default: return Turnierpfade.klasse3
+        }
     }
 }
 

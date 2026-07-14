@@ -121,9 +121,15 @@ struct TurnierpfadView: View {
     // MARK: Klassen-Schalter
 
     private var klassenSchalter: some View {
-        HStack(spacing: 8) {
-            klassenKnopf("klasse3", titel: "🏠 3. Klasse")
-            klassenKnopf("klasse4", titel: "🏇 4. Klasse")
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                klassenKnopf("klasse1", titel: "🐣 1. Klasse")
+                klassenKnopf("klasse2", titel: "🌱 2. Klasse")
+            }
+            HStack(spacing: 8) {
+                klassenKnopf("klasse3", titel: "🏠 3. Klasse")
+                klassenKnopf("klasse4", titel: "🏇 4. Klasse")
+            }
         }
     }
 
@@ -207,7 +213,8 @@ struct TurnierpfadView: View {
     // MARK: Fußnote
 
     private var fussnote: some View {
-        Text("🎀 Schleife = mindestens \(Runde.schleifeMinSterne) von \(Runde.aufgabenProRunde) Sternen im \(Runde.schleifeMinGangart.anzeigename) oder schneller.\nGeschaffte Stationen bleiben als Freies Training offen. 🐾")
+        let regeln = Runde(aufgabenProRunde: pfad.aufgabenProRunde)
+        return Text("🎀 Schleife = mindestens \(regeln.schleifeMinSterne) von \(regeln.aufgabenProRunde) Sternen im \(Runde.schleifeMinGangart.anzeigename) oder schneller.\nGeschaffte Stationen bleiben als Freies Training offen. 🐾")
             .font(.caption)
             .foregroundStyle(Palette.soft)
             .multilineTextAlignment(.center)
