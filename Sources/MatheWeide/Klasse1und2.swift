@@ -225,7 +225,7 @@ public enum Sachaufgaben1Generator {
                 frage: "Bruno hat \(a) Knochen und bekommt \(b) dazu. Wie viele hat er jetzt?",
                 antwort: a + b,
                 thema: "Sachaufgabe: dazubekommen",
-                hinweis: "„Dazu" heißt Plus: \(a) + \(b)."
+                hinweis: "„Dazu“ heißt Plus: \(a) + \(b)."
             )
         case .trab:
             let b = Int.random(in: 5...10, using: &rng)
@@ -234,7 +234,7 @@ public enum Sachaufgaben1Generator {
                 frage: "Daisy hat \(b) Äpfel und frisst \(a) davon. Wie viele bleiben übrig?",
                 antwort: b - a,
                 thema: "Sachaufgabe: wegnehmen",
-                hinweis: "„Übrig bleiben" heißt Minus: \(b) − \(a)."
+                hinweis: "„Übrig bleiben“ heißt Minus: \(b) − \(a)."
             )
         case .galopp:
             let a = Int.random(in: 5...9, using: &rng)
@@ -494,7 +494,7 @@ public enum Sachaufgaben2Generator {
                 frage: "Im Stall liegen \(a) Heuballen, es kommen \(b) dazu. Wie viele sind es jetzt?",
                 antwort: a + b,
                 thema: "Sachaufgabe: dazubekommen",
-                hinweis: "„Dazu" heißt Plus: \(a) + \(b)."
+                hinweis: "„Dazu“ heißt Plus: \(a) + \(b)."
             )
         case .galopp:
             let preis = Int.random(in: 12...45, using: &rng)
