@@ -14,7 +14,7 @@ public enum MatheAufgabe: Equatable, Sendable {
         case .zahl(let a):
             return a.frage
         case .divisionMitRest(let a):
-            return "\(a.dividend) : \(a.divisor) = ?  Rest ?"
+            return "\(a.dividend.mitTausenderpunkt) : \(a.divisor) = ?  Rest ?"
         }
     }
 

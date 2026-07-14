@@ -11,10 +11,10 @@ struct TurnierpfadKatalogTests {
     @Test("Alle Pfade zusammen enthalten alle Stationen genau einmal")
     func vollstaendig() {
         let alle = Turnierpfade.alle.flatMap(\.stationen)
-        #expect(Turnierpfade.klasse1.stationen.count == 6)
-        #expect(Turnierpfade.klasse2.stationen.count == 7)
-        #expect(Turnierpfade.klasse3.stationen.count == 10)
-        #expect(Turnierpfade.klasse4.stationen.count == 6)
+        #expect(Turnierpfade.klasse1.stationen.count == 8)
+        #expect(Turnierpfade.klasse2.stationen.count == 8)
+        #expect(Turnierpfade.klasse3.stationen.count == 11)
+        #expect(Turnierpfade.klasse4.stationen.count == 11)
         #expect(alle.count == MatheStation.allCases.count)
         #expect(Set(alle).count == alle.count)
     }
@@ -88,6 +88,21 @@ struct TurnierpfadKatalogTests {
         #expect(a.frage.contains("Rest ?"))
         #expect(a.antwortText == "\(d.ergebnis), Rest \(d.rest)")
         #expect(a.thema == "Division mit Rest")
+    }
+
+    @Test("Schriftliche Division (4. Klasse): große Zahlen, Rest darf 0 sein", arguments: Gangart.allCases)
+    func schriftlicheDivision(gangart: Gangart) {
+        var rng = SeedRNG(seed: 19)
+        var restNullGesehen = false
+        for _ in 1...200 {
+            let d = SchriftlichDividierenGenerator.neueAufgabe(gangart: gangart, using: &rng)
+            #expect(d.ergebnis * d.divisor + d.rest == d.dividend)
+            #expect(d.rest >= 0)
+            #expect(d.rest < d.divisor)
+            #expect(d.ergebnis >= 21)
+            if d.rest == 0 { restNullGesehen = true }
+        }
+        #expect(restNullGesehen, "Rest 0 gehört zur schriftlichen Division dazu")
     }
 
     @Test("Erste Aufgabe ist nie eine Wiederholung")

@@ -493,15 +493,137 @@ function genPlusMinusMit(level) {
 }
 
 function genKleineMalreihen(level) {
-  const reihe = level === 0 ? 2 : level === 1 ? pick([5, 10]) : pick([3, 4]);
+  // Lehrplan 2. Klasse: das GANZE kleine Einmaleins – schwere Reihen im Galopp.
+  const reihe = level === 0 ? pick([2, 10]) : level === 1 ? pick([5, 3, 4]) : pick([6, 7, 8, 9]);
   const b = rand(1, 10);
   return mach(`${reihe} · ${b} = ?`, reihe * b, `Malreihe von ${reihe}`, `Denk an die ${reihe}er-Reihe: immer ${reihe} dazu.`);
 }
 
 function genErsteIn(level) {
-  const teiler = level === 0 ? 2 : level === 1 ? pick([5, 10]) : pick([3, 4]);
+  const teiler = level === 0 ? pick([2, 10]) : level === 1 ? pick([5, 3, 4]) : pick([6, 7, 8, 9]);
   const ergebnis = rand(1, 10); const zahl = teiler * ergebnis;
   return mach(`${teiler} in ${zahl} = ?`, ergebnis, "In-Rechnungen", `Wie oft passt ${teiler} in ${zahl}? Denk an die ${teiler}er-Reihe.`);
+}
+
+/* ---------- Lehrplan-Ergänzungen (Audit 13.07.2026) ---------- */
+
+/* 1. Klasse: Verdoppeln & Halbieren im ZR 20 */
+function genVerdoppeln20(level) {
+  if (level === 0) { const a = rand(1, 5); return mach(`Verdopple ${a}!`, a * 2, "Verdoppeln bis 10", `Verdoppeln heißt: ${a} + ${a}.`); }
+  if (level === 1) { const a = rand(6, 10); return mach(`Verdopple ${a}!`, a * 2, "Verdoppeln bis 20", `Verdoppeln heißt: ${a} + ${a}.`); }
+  const a = rand(1, 10) * 2; return mach(`Die Hälfte von ${a} = ?`, a / 2, "Halbieren bis 20", `Teile ${a} in zwei gleich große Teile.`);
+}
+
+/* 1. Klasse: Mit Euro zahlen bis 20 € */
+function genGeld20(level) {
+  if (level === 0) { const a = rand(1, 5); const b = rand(1, 10 - a); return mach(`${a} € + ${b} € = ? €`, a + b, "Mit Euro rechnen", "Rechne wie mit Zahlen – nur mit € dahinter."); }
+  if (level === 1) { const a = rand(5, 20); const b = rand(1, a - 1); return mach(`Du hast ${a} € und kaufst etwas um ${b} €. Wie viele € bleiben?`, a - b, "Einkaufen mit Euro", `Ausgeben heißt Minus: ${a} − ${b}.`); }
+  const preis = rand(2, 9); return mach(`Das Spielzeug kostet ${preis} €. Du zahlst mit 10 €. Wie viele € bekommst du zurück?`, 10 - preis, "Rückgeld", `Rückgeld heißt Minus: 10 − ${preis}.`);
+}
+
+/* 2. Klasse: Uhr & Zeit */
+function genUhrZeit(level) {
+  if (level === 0) {
+    return pick([
+      () => mach("1 Stunde = ? Minuten", 60, "Zeit-Maße", "Der große Zeiger braucht 60 Minuten für eine Runde."),
+      () => mach("1 Tag = ? Stunden", 24, "Zeit-Maße", "Ein ganzer Tag mit Tag und Nacht hat 24 Stunden."),
+      () => mach("1 Woche = ? Tage", 7, "Zeit-Maße", "Montag bis Sonntag – zähl nach!"),
+      () => mach("1 Minute = ? Sekunden", 60, "Zeit-Maße", "Eine Minute hat 60 Sekunden."),
+    ])();
+  }
+  if (level === 1) {
+    return pick([
+      () => mach("Eine halbe Stunde = ? Minuten", 30, "Halbe und Viertelstunden", "Die Hälfte von 60."),
+      () => mach("Eine Viertelstunde = ? Minuten", 15, "Halbe und Viertelstunden", "60 geteilt in 4 Teile."),
+      () => mach("Eine Dreiviertelstunde = ? Minuten", 45, "Halbe und Viertelstunden", "Drei mal eine Viertelstunde: 15 + 15 + 15."),
+    ])();
+  }
+  if (Math.random() < 0.5) {
+    const von = rand(1, 9); const bis = rand(von + 1, Math.min(von + 5, 12));
+    return mach(`Von ${von} Uhr bis ${bis} Uhr sind es ? Stunden`, bis - von, "Zeitspannen", `Zähl die vollen Stunden von ${von} bis ${bis}.`);
+  }
+  const a = rand(1, 5) * 5; const b = rand(1, 5) * 5;
+  return mach(`${a} Minuten + ${b} Minuten = ? Minuten`, a + b, "Mit Minuten rechnen", "Rechne wie mit Zahlen – nur mit Minuten.");
+}
+
+/* 3. Klasse: Hälfte & Viertel (Brüche anbahnen) */
+function genHaelfteViertel(level) {
+  if (level === 0) { const a = rand(6, 50) * 2; return mach(`Die Hälfte von ${a} = ?`, a / 2, "Halbieren", `Teile ${a} in zwei gleich große Teile.`); }
+  if (level === 1) { const a = rand(3, 25) * 4; return mach(`Ein Viertel von ${a} = ?`, a / 4, "Vierteln", `Halbiere ${a} – und halbiere dann noch einmal.`); }
+  if (Math.random() < 0.5) { const a = rand(11, 49) * 20; return mach(`Die Hälfte von ${a} = ?`, a / 2, "Halbieren im Zahlenraum 1000", "Halbiere zuerst die Hunderter, dann die Zehner."); }
+  const a = rand(2, 12) * 80; return mach(`Ein Viertel von ${a} = ?`, a / 4, "Vierteln im Zahlenraum 1000", "Zweimal halbieren – das ist ein Viertel.");
+}
+
+/* 4. Klasse: Bis zur Million */
+function genMillion(level) {
+  if (level === 0) {
+    const ht = rand(1, 9); const zt = rand(1, 9); const t = rand(1, 9);
+    return mach(`${fmt(ht * 100000)} + ${fmt(zt * 10000)} + ${fmt(t * 1000)} = ?`, ht * 100000 + zt * 10000 + t * 1000, "Große Zahlen zusammensetzen", "Hunderttausender, Zehntausender und Tausender einfach nebeneinander.");
+  }
+  if (level === 1) { const t = rand(12, 98) * 10; return mach(`Wie viele Tausender stecken in ${fmt(t * 1000)}?`, t, "Stellenwert verstehen", "Streich die letzten drei Nullen weg."); }
+  if (Math.random() < 0.5) {
+    const n = rand(12, 89) * 10000 + rand(1, 9) * 1000;
+    return mach(`${fmt(n)} + 10.000 = ?`, n + 10000, "Zehntausendersprünge", "Nur die Zehntausender-Stelle ändert sich.");
+  }
+  return mach("999.999 + 1 = ?", 1000000, "Die Million!", "Alle Stellen kippen um – wie ein Kilometerzähler.");
+}
+
+/* 4. Klasse: Schriftliche Division (Rest darf hier auch 0 sein) */
+function genSchriftlichDiv(level) {
+  let teiler, q;
+  if (level === 0) { teiler = pick([2, 3, 4, 5]); q = rand(21, 99); }
+  else if (level === 1) { teiler = rand(3, 9); q = rand(51, 199); }
+  else { teiler = rand(3, 9); q = rand(201, 999); }
+  const rest = rand(0, teiler - 1);
+  const dividend = teiler * q + rest;
+  return {
+    typ: "rest",
+    frage: `${fmt(dividend)} : ${teiler} = ?  Rest ?`,
+    antwort: { q, rest },
+    antwortText: `${fmt(q)}, Rest ${rest}`,
+    thema: "Schriftliche Division",
+    hinweis: `Teile Stelle für Stelle durch ${teiler} – von links nach rechts. Was am Schluss übrig bleibt, ist der Rest.`,
+  };
+}
+
+/* 4. Klasse: Brüche & Teile */
+function genBrueche(level) {
+  if (level === 0) {
+    const teile = pick([2, 4]); const a = rand(3, 25) * teile;
+    return mach(`${teile === 2 ? "Die Hälfte" : "Ein Viertel"} von ${a} = ?`, a / teile, "Hälfte und Viertel", `Teile ${a} in ${teile} gleich große Teile.`);
+  }
+  if (level === 1) {
+    const teile = pick([3, 6, 8]); const a = rand(2, 12) * teile;
+    const name = teile === 3 ? "Ein Drittel" : teile === 6 ? "Ein Sechstel" : "Ein Achtel";
+    return mach(`${name} von ${a} = ?`, a / teile, "Bruchteile", `Teile ${a} in ${teile} gleich große Teile.`);
+  }
+  if (Math.random() < 0.5) { const a = rand(3, 20) * 4; return mach(`Drei Viertel von ${a} = ?`, (a / 4) * 3, "Mehrere Bruchteile", `Rechne zuerst ein Viertel (${a / 4}) – und nimm es dreimal.`); }
+  const a = rand(4, 30) * 3; return mach(`Zwei Drittel von ${a} = ?`, (a / 3) * 2, "Mehrere Bruchteile", `Rechne zuerst ein Drittel (${a / 3}) – und nimm es zweimal.`);
+}
+
+/* 4. Klasse: Umfang & Fläche */
+function genUmfangFlaeche(level) {
+  if (level === 0) { const a = rand(2, 9); return mach(`Ein Quadrat hat die Seite ${a} cm. Wie groß ist sein Umfang in cm?`, 4 * a, "Umfang des Quadrats", `Vier gleich lange Seiten: 4 · ${a}.`); }
+  if (level === 1) {
+    const a = rand(4, 12); const b = rand(2, a - 1);
+    return mach(`Ein Rechteck ist ${a} cm lang und ${b} cm breit. Wie groß ist sein Umfang in cm?`, 2 * (a + b), "Umfang des Rechtecks", `Länge plus Breite – und das Ganze zweimal: 2 · (${a} + ${b}).`);
+  }
+  const a = rand(4, 12); const b = rand(2, 9);
+  return mach(`Ein Rechteck ist ${a} cm lang und ${b} cm breit. Wie groß ist seine Fläche in cm²?`, a * b, "Fläche des Rechtecks", `Fläche heißt Länge mal Breite: ${a} · ${b}.`);
+}
+
+/* 4. Klasse: Komma, Geld & Maße */
+function genKommaGeld(level) {
+  if (level === 0) {
+    const euro = rand(1, 9); const zehner = rand(1, 9);
+    return mach(`${euro},${zehner}0 € = ? c`, euro * 100 + zehner * 10, "Kommazahlen bei Geld", "Vor dem Komma stehen Euro (je 100 c), dahinter die Cent.");
+  }
+  if (level === 1) {
+    if (Math.random() < 0.5) { const km = rand(1, 9); const r = rand(1, 9); return mach(`${km},${r} km = ? m`, km * 1000 + r * 100, "Kommazahlen bei Längen", "1 km sind 1.000 m – die Kommastelle sind Hunderter-Meter."); }
+    const m = rand(1, 9); const cm = rand(1, 9); return mach(`${m},${cm}0 m = ? cm`, m * 100 + cm * 10, "Kommazahlen bei Längen", "1 m sind 100 cm – die Kommastellen sind die Zentimeter.");
+  }
+  if (Math.random() < 0.5) { const t = rand(1, 9); const r = rand(1, 9); return mach(`${t},${r} t = ? kg`, t * 1000 + r * 100, "Kommazahlen bei Gewichten", "1 t sind 1.000 kg – die Kommastelle sind Hunderter-Kilo."); }
+  const kg = rand(1, 9); const dag = rand(1, 9); return mach(`${kg} kg ${dag * 10} dag = ? dag`, kg * 100 + dag * 10, "Gemischte Maße", "1 kg sind 100 dag – dann die dag dazuzählen.");
 }
 
 function genVerdoppeln(level) {
@@ -530,6 +652,8 @@ const TURNIERPFADE = [
       { id: "s1_pm10", emoji: "🌱", titel: "Plus & Minus bis 10", sub: "die ersten Rechnungen", gen: genPlusMinus10, farbe: PALETTE.grass },
       { id: "s1_zr20", emoji: "🔢", titel: "Zahlenraum 20", sub: "Zehner und Einer", gen: genZahlenraum20, farbe: PALETTE.blue },
       { id: "s1_pm20", emoji: "➕", titel: "Plus & Minus bis 20", sub: "über den Zehner", gen: genPlusMinus20, farbe: PALETTE.grass, mix: true },
+      { id: "s1_verdopp", emoji: "🪞", titel: "Verdoppeln & Halbieren", sub: "doppelt und halb", gen: genVerdoppeln20, farbe: PALETTE.sun },
+      { id: "s1_geld", emoji: "💶", titel: "Mit Euro zahlen", sub: "€ bis 20", gen: genGeld20, farbe: PALETTE.sun, mix: true },
       { id: "s1_final", emoji: "🏆", titel: "Abschlussturnier", sub: "kleine Sachaufgaben", gen: genSach1, farbe: PALETTE.lila, mix: true },
     ],
   },
@@ -542,9 +666,10 @@ const TURNIERPFADE = [
       { id: "s2_zr100", emoji: "🔢", titel: "Zahlenraum 100 entdecken", sub: "Zehner und Einer", gen: genZahlenraum100, farbe: PALETTE.blue },
       { id: "s2_pmo", emoji: "➕", titel: "Plus & Minus ohne Übertrag", sub: "Schritt für Schritt", gen: genPlusMinusOhne, farbe: PALETTE.grass },
       { id: "s2_pmm", emoji: "💪", titel: "Plus & Minus mit Übertrag", sub: "über den Zehner", gen: genPlusMinusMit, farbe: PALETTE.grass, mix: true },
-      { id: "s2_mal", emoji: "✖️", titel: "Malreihen 2, 5 und 10", sub: "das kleine Einmaleins beginnt", gen: genKleineMalreihen, farbe: PALETTE.coral },
+      { id: "s2_mal", emoji: "✖️", titel: "Das kleine Einmaleins", sub: "alle Malreihen", gen: genKleineMalreihen, farbe: PALETTE.coral },
       { id: "s2_in", emoji: "🍏", titel: "Erste In-Rechnungen", sub: "Teilen kennenlernen", gen: genErsteIn, farbe: PALETTE.coral },
       { id: "s2_verdopp", emoji: "🪞", titel: "Verdoppeln & Halbieren", sub: "doppelt und halb", gen: genVerdoppeln, farbe: PALETTE.sun },
+      { id: "s2_zeit", emoji: "⏰", titel: "Uhr & Zeit", sub: "Stunden, Minuten, Tage", gen: genUhrZeit, farbe: PALETTE.sun, mix: true },
       { id: "s2_final", emoji: "🏆", titel: "Abschlussturnier", sub: "gemischte Sachaufgaben", gen: genSach2, farbe: PALETTE.lila, mix: true },
     ],
   },
@@ -560,6 +685,7 @@ const TURNIERPFADE = [
       { id: "s3_mal", emoji: "✖️", titel: "Malreihen sichern", sub: "das Einmaleins", gen: genMalreihen, farbe: PALETTE.coral },
       { id: "s3_in", emoji: "🍏", titel: "In-Rechnungen", sub: "Teilen lernen", gen: genInRechnungen, farbe: PALETTE.coral },
       { id: "s3_rest", emoji: "➗", titel: "Division mit Rest", sub: "z. B. 47 : 5", gen: genRest, farbe: PALETTE.blue, mix: true },
+      { id: "s3_teile", emoji: "🍕", titel: "Hälfte & Viertel", sub: "Brüche anbahnen", gen: genHaelfteViertel, farbe: PALETTE.lila },
       { id: "s3_laenge", emoji: "📏", titel: "Längenmaße", sub: "m, cm, km", gen: genLaengen, farbe: PALETTE.sun },
       { id: "s3_gewicht", emoji: "⚖️", titel: "Gewichte", sub: "kg, dag, g", gen: genGewichte, farbe: PALETTE.sun },
       { id: "s3_geld", emoji: "💶", titel: "Geld & Zeit", sub: "€, c, h, min", gen: genGeldZeit, farbe: PALETTE.sun, mix: true },
@@ -573,10 +699,15 @@ const TURNIERPFADE = [
     rundenLaenge: 10,
     stationen: [
       { id: "s4_zr", emoji: "🔢", titel: "Zahlenraum 100.000 entdecken", sub: "große Zahlen verstehen", gen: genZahlenraum100k, farbe: PALETTE.blue },
+      { id: "s4_mio", emoji: "🚀", titel: "Bis zur Million", sub: "der ganze Zahlenraum", gen: genMillion, farbe: PALETTE.blue },
       { id: "s4_pm", emoji: "➕", titel: "Plus & Minus bis 100.000", sub: "rechnen im großen Raum", gen: genPlusMinus100k, farbe: PALETTE.grass },
       { id: "s4_rund", emoji: "🎯", titel: "Runden & Überschlagen", sub: "≈ ungefähr rechnen", gen: genRunden, farbe: PALETTE.lila, mix: true },
       { id: "s4_mal", emoji: "✖️", titel: "Mal & In mit großen Zahlen", sub: "geschickt zerlegen", gen: genMalIn100k, farbe: PALETTE.coral },
+      { id: "s4_div", emoji: "➗", titel: "Schriftlich dividieren", sub: "große Zahlen teilen", gen: genSchriftlichDiv, farbe: PALETTE.blue, mix: true },
+      { id: "s4_brueche", emoji: "🍕", titel: "Brüche & Teile", sub: "Drittel, Viertel, Achtel", gen: genBrueche, farbe: PALETTE.lila },
+      { id: "s4_geo", emoji: "📐", titel: "Umfang & Fläche", sub: "Rechteck und Quadrat", gen: genUmfangFlaeche, farbe: PALETTE.lila },
       { id: "s4_masse", emoji: "⚖️", titel: "Neue Maße", sub: "t, mm, s", gen: genMasseNeu, farbe: PALETTE.sun },
+      { id: "s4_komma", emoji: "💶", titel: "Komma, Geld & Maße", sub: "2,50 € verstehen", gen: genKommaGeld, farbe: PALETTE.sun, mix: true },
       { id: "s4_final", emoji: "🏆", titel: "Abschlussturnier", sub: "gemischte Sachaufgaben", gen: genSach4, farbe: PALETTE.lila, mix: true },
     ],
   },

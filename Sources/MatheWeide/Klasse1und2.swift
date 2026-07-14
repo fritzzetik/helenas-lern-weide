@@ -383,7 +383,8 @@ public enum PlusMinus100MitUebertragGenerator {
     }
 }
 
-/// Kleine Malreihen: 2er, 5er, 10er – im Galopp 3er und 4er.
+/// Das kleine Einmaleins: 2er/10er zuerst, dann 5er/3er/4er,
+/// im Galopp die schweren Reihen 6 bis 9 (Lehrplan: alle Reihen in der 2. Klasse).
 public enum KleineMalreihenGenerator {
     public static func neueAufgabe(
         gangart: Gangart,
@@ -391,9 +392,9 @@ public enum KleineMalreihenGenerator {
     ) -> ZahlenAufgabe {
         let reihe: Int
         switch gangart {
-        case .schritt: reihe = 2
-        case .trab: reihe = [5, 10].randomElement(using: &rng)!
-        case .galopp: reihe = [3, 4].randomElement(using: &rng)!
+        case .schritt: reihe = [2, 10].randomElement(using: &rng)!
+        case .trab: reihe = [5, 3, 4].randomElement(using: &rng)!
+        case .galopp: reihe = [6, 7, 8, 9].randomElement(using: &rng)!
         }
         let b = Int.random(in: 1...10, using: &rng)
         return ZahlenAufgabe(
@@ -405,7 +406,7 @@ public enum KleineMalreihenGenerator {
     }
 }
 
-/// Erste In-Rechnungen mit den kleinen Reihen.
+/// Erste In-Rechnungen – passend zu den Malreihen bis hin zu den schweren Reihen.
 public enum ErsteInRechnungenGenerator {
     public static func neueAufgabe(
         gangart: Gangart,
@@ -413,9 +414,9 @@ public enum ErsteInRechnungenGenerator {
     ) -> ZahlenAufgabe {
         let teiler: Int
         switch gangart {
-        case .schritt: teiler = 2
-        case .trab: teiler = [5, 10].randomElement(using: &rng)!
-        case .galopp: teiler = [3, 4].randomElement(using: &rng)!
+        case .schritt: teiler = [2, 10].randomElement(using: &rng)!
+        case .trab: teiler = [5, 3, 4].randomElement(using: &rng)!
+        case .galopp: teiler = [6, 7, 8, 9].randomElement(using: &rng)!
         }
         let ergebnis = Int.random(in: 1...10, using: &rng)
         let zahl = teiler * ergebnis

@@ -47,13 +47,15 @@ extension MatheStation {
         case .zaehlenBis20, .plusMinusBis10, .plusMinusBis20,
              .plusMinusOhneUebertrag, .plusMinusMitUebertrag,
              .aufwaermenBis100, .plusMinusBis1000, .plusMinusBis100000: return Palette.grass
-        case .zahlenraum20, .zahlenraum100,
-             .zahlenraum1000, .divisionMitRest, .zahlenraum100000: return Palette.blue
+        case .zahlenraum20, .zahlenraum100, .zahlenraum1000,
+             .divisionMitRest, .schriftlichDividieren,
+             .zahlenraum100000, .bisZurMillion: return Palette.blue
         case .zerlegenErgaenzen, .kleineMalreihen, .ersteInRechnungen,
              .malreihen, .inRechnungen, .malInBis100000: return Palette.coral
-        case .verdoppelnHalbieren,
-             .laengenmasse, .gewichte, .geldUndZeit, .neueMasse: return Palette.sun
-        case .abschlussturnier1, .abschlussturnier2,
+        case .verdoppelnBis20, .geldBis20, .verdoppelnHalbieren, .uhrZeit,
+             .laengenmasse, .gewichte, .geldUndZeit, .neueMasse, .kommaGeldMasse: return Palette.sun
+        case .haelfteViertel, .bruecheUndTeile, .umfangUndFlaeche,
+             .abschlussturnier1, .abschlussturnier2,
              .abschlussturnier3, .abschlussturnier4, .rundenUndUeberschlagen: return Palette.lila
         }
     }
