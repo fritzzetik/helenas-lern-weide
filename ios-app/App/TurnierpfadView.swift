@@ -120,28 +120,40 @@ struct TurnierpfadView: View {
 
     // MARK: Klassen-Schalter
 
-    private var klassenSchalter: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                klassenKnopf("klasse1", titel: "🐣 1. Klasse")
-                klassenKnopf("klasse2", titel: "🌱 2. Klasse")
-            }
-            HStack(spacing: 8) {
-                klassenKnopf("klasse3", titel: "🏠 3. Klasse")
-                klassenKnopf("klasse4", titel: "🏇 4. Klasse")
-            }
-        }
-    }
+    private static let klassen: [(id: String, titel: String)] = [
+        ("klasse1", "🐣 1. Klasse"),
+        ("klasse2", "🌱 2. Klasse"),
+        ("klasse3", "🏠 3. Klasse"),
+        ("klasse4", "🏇 4. Klasse"),
+    ]
 
-    private func klassenKnopf(_ id: String, titel: String) -> some View {
-        Button { service.setzeKlasse(id) } label: {
-            Text(titel)
-                .font(.subheadline.bold())
-                .frame(maxWidth: .infinity, minHeight: 40)
-                .background(klasse == id ? Palette.grass : .white, in: Capsule())
-                .foregroundStyle(klasse == id ? .white : Palette.ink)
+    /// Kompakter Umschalter: zeigt die aktuelle Klasse, tippt man drauf,
+    /// klappt die Auswahl auf – vier Buttons nebeneinander waren zu breit.
+    private var klassenSchalter: some View {
+        Menu {
+            ForEach(Self.klassen, id: \.id) { eintrag in
+                Button {
+                    service.setzeKlasse(eintrag.id)
+                } label: {
+                    if eintrag.id == klasse {
+                        Label(eintrag.titel, systemImage: "checkmark")
+                    } else {
+                        Text(eintrag.titel)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(Self.klassen.first { $0.id == klasse }?.titel ?? "🏠 3. Klasse")
+                    .font(.subheadline.bold())
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption.bold())
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(.white, in: Capsule())
+            .foregroundStyle(Palette.ink)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: Stationen mit 🐾-Verbindungen

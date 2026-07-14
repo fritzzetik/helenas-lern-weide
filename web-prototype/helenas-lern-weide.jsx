@@ -1281,19 +1281,22 @@ export default function HelenasLernWeide() {
             {heute.aufgaben > 0 && <span className="bericht-zaehler">{heute.aufgaben} Aufgaben heute</span>}
           </button>
 
-          {/* Klassen-Schalter – wird später ins Profil wandern */}
-          <div className="klassen-schalter" role="tablist" aria-label="Klasse wählen">
-            {TURNIERPFADE.map((p) => (
-              <button
-                key={p.id}
-                role="tab"
-                aria-selected={klasse === p.id}
-                className={klasse === p.id ? "klasse-btn on" : "klasse-btn"}
-                onClick={() => setKlasse(p.id)}
-              >
-                {p.emoji} {p.titel}
-              </button>
-            ))}
+          {/* Klassen-Wahl: kompaktes Auswahlfeld statt vier Buttons –
+              am iPhone öffnet sich das native Wahlrad. */}
+          <div className="klassen-wahl">
+            <label className="klassen-label" htmlFor="klassen-select">Ich bin in der</label>
+            <select
+              id="klassen-select"
+              className="klassen-select"
+              value={klasse}
+              onChange={(e) => setKlasse(e.target.value)}
+            >
+              {TURNIERPFADE.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.emoji} {p.titel}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Turnierpfad */}
@@ -1618,32 +1621,21 @@ const css = `
 .bericht-hinweis { font-size: 12px; font-weight: 700; color: ${PALETTE.soft}; margin: 0; }
 
 /* --- Klassen-Schalter (später Profil-Setting) --- */
-.klassen-schalter {
-  display: flex; gap: 8px;
-  flex-wrap: wrap;               /* vier Klassen → zwei Reihen am Handy */
-  background: #EFE7D6;
-  border-radius: 24px;
-  padding: 6px;
+.klassen-wahl {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
 }
-.klasse-btn {
-  flex: 1 1 40%;
-  border: 3px solid transparent;
-  background: transparent;
-  border-radius: 999px;
-  padding: 10px 8px;
-  font-family: 'Baloo 2', cursive;
-  font-size: 16px;
-  color: ${PALETTE.soft};
-  cursor: pointer;
-  transition: transform .12s ease;
+.klassen-label {
+  font-weight: 800; color: ${PALETTE.soft}; font-size: 15px;
 }
-.klasse-btn.on {
-  background: ${PALETTE.cream};
-  border-color: ${PALETTE.brown};
-  color: ${PALETTE.ink};
-  box-shadow: 0 3px 0 rgba(51,41,31,0.12);
+.klassen-select {
+  -webkit-appearance: none; appearance: none;
+  font-family: 'Baloo 2', cursive; font-size: 17px; color: ${PALETTE.ink};
+  background: #fff; border: 3px solid ${PALETTE.grass}; border-radius: 999px;
+  padding: 8px 36px 8px 16px; cursor: pointer;
+  box-shadow: 0 3px 0 rgba(51,41,31,0.10);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%2333291F' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat; background-position: right 14px center;
 }
-.klasse-btn:active { transform: scale(.97); }
 
 /* --- Turnierpfad --- */
 .pfad { display: flex; flex-direction: column; }
