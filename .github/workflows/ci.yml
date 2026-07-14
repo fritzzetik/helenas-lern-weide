@@ -24,8 +24,17 @@ jobs:
       - name: Swift-Version anzeigen (Debug)
         run: swift --version
 
+      # Fehlgeschlagene Tests landen als ::error-Annotations im Check –
+      # damit sind sie auch ohne Log-Zugriff über die API diagnostizierbar.
       - name: Tests ausführen
-        run: swift test --parallel
+        run: |
+          set -o pipefail
+          if ! swift test --parallel 2>&1 | tee test.log; then
+            grep -E "recorded an issue|Test .* failed|error:" test.log | head -40 | while IFS= read -r zeile; do
+              echo "::error::$zeile"
+            done
+            exit 1
+          fi
 
   # ── Optional: iOS-App im Simulator bauen ──────────────────────────
   # Aktivieren, sobald ein Xcode-Projekt (.xcodeproj) im Repo liegt.
