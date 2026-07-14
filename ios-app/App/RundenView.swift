@@ -42,6 +42,8 @@ struct RundenView: View {
     // Kontext für den Wiederholungs-Mix (einmal beim Start geladen).
     @State private var geschafft: Set<MatheStation> = []
     @State private var gangarten: [MatheStation: Gangart] = [:]
+    // Bereits gestellte Fragen dieser Runde – keine Frage doppelt.
+    @State private var gestellteFragen: Set<String> = []
 
     private let brunoService = BrunoErklaerungsService()
     private var name: String { profile.first?.name ?? "Helena" }
@@ -283,6 +285,7 @@ struct RundenView: View {
         hatteSchleife = geschafft.contains(station)
         runde = Runde(gangart: gangarten[station] ?? .schritt,
                       aufgabenProRunde: pfad.aufgabenProRunde)
+        gestellteFragen = []
         levelMsg = nil
         brunoService.aufwaermen()
         naechsteAufgabe()
@@ -292,10 +295,12 @@ struct RundenView: View {
         var rng = SystemRandomNumberGenerator()
         let geplant = AufgabenPlaner.aufgabe(
             fuer: station, position: runde.position, gangart: runde.gangart,
-            pfad: pfad, geschafft: geschafft, gangarten: gangarten, using: &rng
+            pfad: pfad, geschafft: geschafft, gangarten: gangarten,
+            vermeideFragen: gestellteFragen, using: &rng
         )
         wiederholungVon = geplant.wiederholungVon
         originalAufgabe = nil
+        gestellteFragen.insert(geplant.aufgabe.frage)
         zeige(AppAufgabe(geplant.aufgabe), phase: .frage)
     }
 
@@ -373,11 +378,18 @@ struct RundenView: View {
         }
     }
 
-    /// Nach Brunos Erklärung: ähnliche Aufgabe, eine Gangart gemütlicher.
+    /// Nach Brunos Erklärung: ähnliche Aufgabe, eine Gangart gemütlicher –
+    /// aber nicht zufällig genau dieselbe Frage noch einmal.
     private func quercheckStarten() {
         let quelle = wiederholungVon ?? station
         let original = originalAufgabe
-        zeige(quelle.appAufgabe(gangart: runde.gangart.langsamer), phase: .quercheck)
+        var neu = quelle.appAufgabe(gangart: runde.gangart.langsamer)
+        var anlauf = 0
+        while anlauf < 12, neu.frage == original?.frage {
+            neu = quelle.appAufgabe(gangart: runde.gangart.langsamer)
+            anlauf += 1
+        }
+        zeige(neu, phase: .quercheck)
         originalAufgabe = original   // Auflösung nach dem Quercheck zeigen
     }
 

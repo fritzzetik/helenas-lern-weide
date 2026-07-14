@@ -20,7 +20,35 @@ public enum AufgabenPlaner {
 
     /// Erzeugt die Aufgabe für eine Position der Runde.
     /// Liefert zusätzlich die Quellstation, wenn es eine Wiederholung ist.
+    /// `vermeideFragen`: bereits gestellte Fragen dieser Runde – der Planer
+    /// würfelt bis zu 12-mal neu, damit sich keine Frage wiederholt.
+    /// (Kleine Zahlenräume wie „Ergänzen auf 10" haben sonst fast sicher Doppler.)
     public static func aufgabe(
+        fuer station: MatheStation,
+        position: Int,
+        gangart: Gangart,
+        pfad: Turnierpfad<MatheStation>,
+        geschafft: Set<MatheStation>,
+        gangarten: [MatheStation: Gangart],
+        vermeideFragen: Set<String> = [],
+        using rng: inout some RandomNumberGenerator
+    ) -> (aufgabe: MatheAufgabe, wiederholungVon: MatheStation?) {
+        var versuch = erzeuge(
+            fuer: station, position: position, gangart: gangart,
+            pfad: pfad, geschafft: geschafft, gangarten: gangarten, using: &rng
+        )
+        var anlauf = 0
+        while anlauf < 12, vermeideFragen.contains(versuch.aufgabe.frage) {
+            versuch = erzeuge(
+                fuer: station, position: position, gangart: gangart,
+                pfad: pfad, geschafft: geschafft, gangarten: gangarten, using: &rng
+            )
+            anlauf += 1
+        }
+        return versuch
+    }
+
+    private static func erzeuge(
         fuer station: MatheStation,
         position: Int,
         gangart: Gangart,

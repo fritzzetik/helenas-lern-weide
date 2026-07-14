@@ -1186,6 +1186,8 @@ export default function HelenasLernWeide() {
   const [levelMsg, setLevelMsg] = useState(null);
 
   const timerRef = useRef(null);
+  // Bereits gestellte Fragen der laufenden Runde – keine Frage doppelt.
+  const gestellteFragenRef = useRef(new Set());
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
   const pfad = TURNIERPFADE.find((p) => p.id === klasse) ?? TURNIERPFADE[0];
@@ -1211,14 +1213,24 @@ export default function HelenasLernWeide() {
   }
 
   /* Aufgabe für Position nr erzeugen. Bei Misch-Stationen sind die
-     Positionen 2 und 4 Wiederholungen (falls es Geschafftes gibt). */
+     Positionen 2 und 4 Wiederholungen (falls es Geschafftes gibt).
+     Keine Frage doppelt in einer Runde: kleine Zahlenräume (z. B.
+     „Ergänzen auf 10") würfeln sonst fast sicher Doppler. */
   function erzeugeAufgabe(nr, lvl) {
-    // Jede zweite Position wiederholt – außer der ersten und der letzten.
-    if (station.mix && nr % 2 === 1 && nr < rundenLaenge - 1) {
-      const w = wiederholungsAufgabe();
-      if (w) return w;
+    const roh = () => {
+      // Jede zweite Position wiederholt – außer der ersten und der letzten.
+      if (station.mix && nr % 2 === 1 && nr < rundenLaenge - 1) {
+        const w = wiederholungsAufgabe();
+        if (w) return w;
+      }
+      return station.gen(lvl);
+    };
+    let a = roh();
+    for (let anlauf = 0; anlauf < 12 && gestellteFragenRef.current.has(a.frage); anlauf++) {
+      a = roh();
     }
-    return station.gen(lvl);
+    gestellteFragenRef.current.add(a.frage);
+    return a;
   }
 
   function startRound(s) {
@@ -1245,7 +1257,10 @@ export default function HelenasLernWeide() {
     setPause(pick(PAUSEN));
     setScreen("round");
     // Erste Aufgabe (nr 0) kommt nie aus der Wiederholung:
-    setTask(s.gen(startLevel));
+    gestellteFragenRef.current = new Set();
+    const erste = s.gen(startLevel);
+    gestellteFragenRef.current.add(erste.frage);
+    setTask(erste);
   }
 
   function passeGangartAn(outcome) {

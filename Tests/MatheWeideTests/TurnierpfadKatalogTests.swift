@@ -160,6 +160,24 @@ struct TurnierpfadKatalogTests {
         #expect(quelle == nil)
     }
 
+    @Test("Keine Frage doppelt in einer Runde (kleiner Zahlenraum)", arguments: Gangart.allCases)
+    func keineDoppler(gangart: Gangart) {
+        var rng = SeedRNG(seed: 23)
+        // 20 Runden à 5 Aufgaben in der Station mit dem kleinsten Fragenpool:
+        for _ in 1...20 {
+            var gestellt: Set<String> = []
+            for position in 0..<Turnierpfade.klasse1.aufgabenProRunde {
+                let (aufgabe, _) = AufgabenPlaner.aufgabe(
+                    fuer: .zerlegenErgaenzen, position: position, gangart: gangart,
+                    pfad: Turnierpfade.klasse1, geschafft: [], gangarten: [:],
+                    vermeideFragen: gestellt, using: &rng
+                )
+                #expect(!gestellt.contains(aufgabe.frage), "Doppelte Frage: \(aufgabe.frage)")
+                gestellt.insert(aufgabe.frage)
+            }
+        }
+    }
+
     @Test("Gleicher Seed erzeugt exakt den gleichen Rundenplan")
     func reproduzierbarkeit() {
         var rng1 = SeedRNG(seed: 7)
