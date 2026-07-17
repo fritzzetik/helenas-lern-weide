@@ -18,6 +18,10 @@ struct TagesberichtSheet: View {
     let statistik: Tagesstatistik
 
     @State private var bild: Image?
+    // Kids-Kategorie (Guideline 1.3): Teilen führt aus der App hinaus und
+    // liegt darum hinter der Elternschranke. Gilt bei jedem Öffnen neu.
+    @State private var teilenFreigegeben = false
+    @State private var zeigeSchranke = false
 
     var body: some View {
         NavigationStack {
@@ -28,17 +32,35 @@ struct TagesberichtSheet: View {
                     .shadow(radius: 6)
 
                 if let bild {
-                    ShareLink(
-                        item: bild,
-                        preview: SharePreview("Daisys Tagesbericht 📸", image: bild)
-                    ) {
-                        Label("Per Nachricht teilen 💌", systemImage: "paperplane.fill")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, minHeight: 52)
-                            .background(Palette.grass, in: RoundedRectangle(cornerRadius: 14))
-                            .foregroundStyle(.white)
+                    if teilenFreigegeben {
+                        ShareLink(
+                            item: bild,
+                            preview: SharePreview("Daisys Tagesbericht 📸", image: bild)
+                        ) {
+                            Label("Per Nachricht teilen 💌", systemImage: "paperplane.fill")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, minHeight: 52)
+                                .background(Palette.grass, in: RoundedRectangle(cornerRadius: 14))
+                                .foregroundStyle(.white)
+                        }
+                        .padding(.horizontal)
+                    } else {
+                        Button {
+                            zeigeSchranke = true
+                        } label: {
+                            Label("Teilen – frag einen Erwachsenen 🔒", systemImage: "lock.fill")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, minHeight: 52)
+                                .background(Palette.soft.opacity(0.25), in: RoundedRectangle(cornerRadius: 14))
+                                .foregroundStyle(Palette.ink)
+                        }
+                        .padding(.horizontal)
+                        .sheet(isPresented: $zeigeSchranke) {
+                            ElternschrankeSheet {
+                                teilenFreigegeben = true
+                            }
+                        }
                     }
-                    .padding(.horizontal)
                 }
 
                 Text("Datum und Uhrzeit sind fix im Bild – so sieht jeder, wann Daisy es gemacht hat. 😉")
